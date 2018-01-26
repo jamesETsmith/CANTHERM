@@ -1,0 +1,21 @@
+### Temp Files ###
+*#
+*~
+_*
+
+### Compiled Code ###
+*pyc
+
+### Output Files ###
+*out
+*dat
+*bkp
+*backup
+
+### Unnecessary Manual Files ###
+*log
+*aux
+*pdf
+*dvi
+*toc
+*bbl
