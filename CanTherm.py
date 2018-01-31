@@ -21,11 +21,14 @@ class CanTherm:
   Parition = []
   scale = 0.0
   # CBSQB3 E for H, N, O, C, P
-  atomEcbsqb3 = {'H': -0.499818, 'N': -54.520543,
-                 'O': -74.987624, 'C': -37.785385, 'P': -340.817186}
+  atomEcbsqb3 = {'H': -0.499818, 'N': -54.520543, 'O': -74.987624,
+    'C': -37.785385, 'P': -340.817186}
   # G3 E for H, N, O, C, P
-  atomEg3 = {'H': -0.5010030, 'N': -54.564343, 'O': -
-             75.030991, 'C': -37.827717, 'P': -341.116432}
+  atomEg3 = {'H': -0.5010030, 'N': -54.564343, 'O': -75.030991, 'C': -37.827717,
+    'P': -341.116432}
+  atomEccsdtf12 = atomEnergies = {'H':-0.499811124128, 'N':-54.526406291655,
+    'O':-74.995458316117, 'C':-37.788203485235, 'S':-397.663040369707}
+
   # expt H contains H + TC + SOC (spin orbital correction)
   atomH = {'H': 50.62, 'N': 111.49, 'O': 58.163, 'C': 169.8147}
   # BAC for C-H C-C C=C C.TB.C  O-H  C-O C=O
@@ -104,6 +107,8 @@ def main():
       atomE = data.atomEcbsqb3
     if molecule.Etype == 'g3':
       atomE = data.atomEg3
+    if molecule.Etype == 'ccsdtf12':
+      atomE = data.atomEccsdtf12  
     for atom in atoms:
       H -= atomE[atom]
       atomsH += data.atomH[atom]

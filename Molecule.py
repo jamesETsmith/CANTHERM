@@ -118,6 +118,8 @@ class Molecule:
         self.Etype = 'cbsqb3'
       elif (tokens[3].upper() == 'G3'):
         self.Etype = 'g3'
+      elif (tokens[3].upper() == 'CCSDTF12'):
+        self.Etype = 'ccsdtf12'
       self.Energy = readGeomFc.readEnergy(energyFile, self.Etype)
       print(self.Energy, self.Etype)
     elif (len(tokens) == 3):
@@ -126,6 +128,8 @@ class Molecule:
         self.Etype = 'cbsqb3'
       elif (tokens[2].upper() == 'G3'):
         self.Etype = 'g3'
+      elif (tokens[2].upper() == 'CCSDTF12'):
+        self.Etype = 'ccsdtf12'
       print(self.Etype.upper(), ' Energy: ', self.Energy)
     else:
       print('Cannot read the Energy')
@@ -358,7 +362,7 @@ class Molecule:
     Freq = self.Freq
     if self.TS:
       oFile.write('Imaginary Frequency: ' + str(self.imagFreq) + '\n')
-    for i in range(len(Freq) / 3 + 1):
+    for i in range(int(len(Freq) / 3) + 1):
       for j in range(3):
         if 3 * i + j < len(Freq):
           oFile.write('%10.3f' % Freq[3 * i + j])

@@ -356,9 +356,12 @@ def readEnergy(file, string):
   com = file.read()
   if string == 'cbsqb3':
     Energy = re.search('CBS-QB3 \(0 K\)= ' + ' \s*([\-0-9.]+)', com).group(1)
-  if string == 'g3':
+  elif string == 'g3':
     Energy = re.search('G3\(0 K\)= ' + ' \s*([\-0-9.]+)', com).group(1)
 
+  elif string == 'ccsdtf12':
+    Energy = re.search(
+        'Sum of electronic and thermal Free Energies=' + ' \s*([\-0-9.]+)', com).group(1)
   return float(Energy)
 
 
