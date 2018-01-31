@@ -19,7 +19,6 @@ numprocessors = 8
 memory = ' 1000MB '
 multi = ' 2'
 
-#file = open(sys.argv[1],'r')
 inertia = open('inertia.dat', 'r')
 result = open('dihed_energy.out', 'w')
 
@@ -40,8 +39,6 @@ result.write('%14.7f' % energy + '\n')
 
 
 for i in range(12**(numRotors)):
-
-  #    diheds = random.rand(len(rotors)-1)*360
   irem = i
   for j in range(len(rotors) - 1):
     diheds[j] = (irem - irem / 12 * 12) * 30.0
@@ -60,10 +57,4 @@ for i in range(12**(numRotors)):
                str(float(newGeom[j, 1])) + '  ' + str(float(newGeom[j, 2])) + '\n')
   file.write('\n\n')
   file.close()
-
-  #os.system("g03 "+str(i+1)+".com")
-  #outputName = str(i+1)+'.log'
-  #energy = readGeomFc.readEnergy(outputName)
-  # result.write('%14.7f'%energy+'\n')
-
 result.close()

@@ -11,8 +11,6 @@ import readGeomFc
 import os
 from numpy import *
 import geomUtility
-#import Gnuplot
-#import Gnuplot.funcutils
 
 #inputFiles = ['1220.log','0120.log','1000.log','1120.log','2101.log','2120.log']
 inputFiles = ['022.log', '112.log', '012.log', '120.log']
@@ -70,14 +68,10 @@ for files in inputFiles:
             b[k + 6] * sin((k + 1) * angle)
       pot.append([angle, v])
 
-    #g = Gnuplot.Gnuplot()
     harmonics.write(str(float(b[0])) + '\n')
     for k in range(5):
       harmonics.write(str(float(b[k + 1])) + '\t' + str(float(b[k + 6])) + '\n')
     harmonics.write('\n')
-    #g('set data style linespoints')
-    # g.plot(potgiven,pot)
 
-    # raw_input("Enter...")
 
   harmonics.write('\n')

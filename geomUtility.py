@@ -3,7 +3,6 @@ import pdb
 import readGeomFc
 from Harmonics import *
 from scipy import *
-#from scipy.linalg import *
 import random
 import math
 
@@ -39,9 +38,6 @@ def rotateDihedrals(geom, rotors, dihedrals, Mass):
       nGeom[atoms - 1, 0] = x
       nGeom[atoms - 1, 1] = y
     k = k + 1
-  # print nGeom
-  # print geom
-  # exit()
   return nGeom
 
 #***********************************************************************************
@@ -220,7 +216,6 @@ def calculateD(geom, Mass, rotors):
         presentParent = rotors[parentNum]
         dircos_ipar = dircos * transpose(presentParent.dircos)
 
-        #ripar = presentParent.dircos*(transpose(geom[rotor.pivotAtom-1,:]-geom[presentParent.pivotAtom-1,:]))
         ripar = transpose((geom[rotor.pivotAtom - 1, :] -
                            geom[presentParent.pivotAtom - 1, :]) * presentParent.dircos)
 
@@ -235,28 +230,6 @@ def calculateD(geom, Mass, rotors):
   S = K[3:, 3:] - K[3:, 0:3] * linalg.inv(K[0:3, 0:3]) * K[0:3, 3:]
   D = S[3:, 3:] - S[3:, 0:3] * linalg.inv(S[0:3, 0:3]) * S[0:3, 3:]
   return D
-
-
-'''    for i in range(6+numRotors-1):
-      for j in range(6+numRotors-1):
-        print '%8.3f'%K[i,j],
-      print
-    print
-'''
-'''    pdb.set_trace()
-    for i in range(3+numRotors-1):
-      for j in range(3+numRotors-1):
-        print '%8.3f'%S[i,j],
-      print
-    print
-
-    for i in range(numRotors-1):
-      for j in range(numRotors-1):
-        print '%8.3f'%D[i,j],
-      print
-    print
-
-    exit()'''
 
 
 #***********************************************************************************
@@ -374,12 +347,4 @@ def calculateI43(geom, Mass, rotors):
 
   for i in range(len(rotors) - 1):
     redMom[i, i] = Im0[i]
-    # for j in range(len(rotors)-1):
-    #   if j!=i :
-    #redMom[i,i] = redMom[i,i] - (1.0/2.0)*Amm[i,j]**2/Im0[j]
-
-  #S = K[3:,3:] - K[3:,0:3]*linalg.inv(K[0:3,0:3])*K[0:3,3:]
-
-  #D = S[3:,3:] - S[3:,0:3]*linalg.inv(S[0:3,0:3])*S[0:3,3:]
-
   return redMom

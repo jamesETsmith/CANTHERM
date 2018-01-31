@@ -14,20 +14,15 @@ def main():
     inertiaFile = open('inertia.dat','r')
     (geom,Mass)=readGeomFc.readGeom(logFile)
     (rotors)= readGeomFc.readGeneralInertia(inertiaFile)
-    #D=calculateI23(geom,Mass,rotors)
     D=calculateD(geom,Mass,rotors)
     (l,v)= linalg.eigh(D)
     print( l, linalg.det(D) )
 
 
 def calculateD(geom,Mass,rotors):
-    #D=geomUtility.calculateD(geom,Mass,rotors)
-    #print linalg.det(D)
-    #exit()
     numRotors = len(rotors)
-#    print geom
-#    exit()
-#change coordinates to have cm
+
+    #change coordinates to have cm
     cm = matrix('0.0 0.0 0.0')
 
     for i in range(Mass.size):
@@ -40,7 +35,7 @@ def calculateD(geom,Mass,rotors):
 
 
 
-#calculate moments of inertia
+    #calculate moments of inertia
     I = matrix(zeros((3,3),dtype=double))
     x = array(geom[:,0])
     y = array(geom[:,1])
@@ -52,14 +47,14 @@ def calculateD(geom,Mass,rotors):
     I[0,2]=I[2,0]=-sum(array(Mass)*x*z)
     I[1,2]=I[2,1]=-sum(array(Mass)*z*y)
 
-#rotate coordinate axes to be parallel to principal axes
+    #rotate coordinate axes to be parallel to principal axes
     (l,v)=linalg.eig(I)
     prinAxes = transpose(v);
 
     for i in range(Mass.size):
         geom[i,:]=transpose(prinAxes*transpose(geom[i,:]))
 
-#again calculate the moments of inertia and confirm that they are diagonal
+    #again calculate the moments of inertia and confirm that they are diagonal
     I = matrix(zeros((3,3),dtype=double))
     x = array(geom[:,0])
     y = array(geom[:,1])
@@ -70,7 +65,6 @@ def calculateD(geom,Mass,rotors):
     I[0,1]=I[1,0]=-sum(array(Mass)*x*y)
     I[0,2]=I[2,0]=-sum(array(Mass)*x*z)
     I[1,2]=I[2,1]=-sum(array(Mass)*z*y)
-#    print I
 
     K=matrix(zeros((6+numRotors-1,6+numRotors-1),dtype=double))
 
@@ -100,7 +94,6 @@ def calculateD(geom,Mass,rotors):
     irotor = 0
     for rotor in rotors[1:]:
         rotor.getAxes(geom,Mass)
-        #pdb.set_trace()
         rotor.getMoments(geom,Mass)
 
         A = rotor.moments[0]
@@ -111,7 +104,6 @@ def calculateD(geom,Mass,rotors):
         r = transpose(rotor.r)
         level = rotor.level
 
-    #    print dircos[2,:]
         K[6+irotor,0:3] = Ux*dircos[1,:]
         K[0:3,6+irotor] = transpose(Ux*dircos[1,:])
 
@@ -135,14 +127,11 @@ def calculateD(geom,Mass,rotors):
             numAncestors = level-2
 
             presentParent = rotor
-            #print numAncestors
             for i in range(numAncestors):
                 parentNum = presentParent.parent
 
                 presentParent = rotors[parentNum]
                 dircos_ipar = dircos*transpose(presentParent.dircos)
-                #pdb.set_trace()
-                #ripar = presentParent.dircos*(transpose(geom[rotor.pivotAtom-1,:]-geom[presentParent.pivotAtom-1,:]))
                 ripar = transpose((geom[rotor.pivotAtom-1,:]-geom[presentParent.pivotAtom-1,:])*presentParent.dircos)
                 beta_z = dircos_ipar[2,2]*A - dircos_ipar[0,2]*B - dircos_ipar[1,2]*C
                 beta_z = beta_z + (dircos_ipar[1,1]*ripar[0] - dircos[1,0]*ripar[1])*Ux
@@ -150,33 +139,8 @@ def calculateD(geom,Mass,rotors):
 
         irotor = irotor+1
 
-
-        #print S
-        #print K
     S = K[3:,3:] - K[3:,0:3]*linalg.inv(K[0:3,0:3])*K[0:3,3:]
-
     D = S[3:,3:] - S[3:,0:3]*linalg.inv(S[0:3,0:3])*S[0:3,3:]
-
-    '''for i in range(numRotors-1):
-      for j in range(numRotors-1):
-        print '%8.3f'%D[i,j],
-      print
-    print
-
-    for i in range(6+numRotors-1):
-      for j in range(6+numRotors-1):
-        print '%8.3f'%K[i,j],
-      print
-    print
-
-    for i in range(3+numRotors-1):
-      for j in range(3+numRotors-1):
-        print '%8.3f'%S[i,j],
-      print
-    print
-    #print linalg.det(D)
-    #exit()'''
-
     return D
 
 

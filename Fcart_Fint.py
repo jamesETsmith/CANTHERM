@@ -71,21 +71,14 @@ for i in range(Mass.size):
 
 tranrot = matrix(orth(tranrot))
 P = tranrot * transpose(tranrot)
-#P = intRotMatrix*transpose(intRotMatrix)
-#Fc = (P)*Fc*(P)
 
 inttranrot = matrix(zeros((3 * Mass.size, 6 + numRotors), dtype=float))
 inttranrot[:, 0:numRotors] = intRotMatrix
 inttranrot[:, numRotors:numRotors + 6] = tranrot
 
 inttranrot = matrix(orth(inttranrot))
-
-#P = inttranrot*transpose(inttranrot)
 I = matrix(eye(3 * Mass.size, 3 * Mass.size))
-
-
 Fc = (I - P) * Fc * (I - P)
-#Fc = P*Fc*P
 
 Tcmc = mat(zeros((3 * Mass.size, 3 * Mass.size), dtype=float))
 for i in range(Mass.size):
@@ -106,7 +99,6 @@ num = Mass.size
 l = sort(l)
 for i in range(len(l) / 3):
   for j in range(3):
-    # print sqrt(l[3*i+j])*337.0/6.5463e-02,'\t',
     print(sqrt(l[3 * i + j] * (627.5095 * 4180 / 6.023e23) *
                (1.88972e10**2) * (1 / 1.67e-27)) / 2 / math.pi / 3e10, '\t')
   print

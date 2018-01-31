@@ -26,6 +26,7 @@ class CanTherm:
   # G3 E for H, N, O, C, P
   atomEg3 = {'H': -0.5010030, 'N': -54.564343, 'O': -75.030991, 'C': -37.827717,
     'P': -341.116432}
+  # CCSD(T)-F12
   atomEccsdtf12 = atomEnergies = {'H':-0.499811124128, 'N':-54.526406291655,
     'O':-74.995458316117, 'C':-37.788203485235, 'S':-397.663040369707}
 
@@ -64,7 +65,6 @@ def main():
     for j in range(len(Temp)):
       Entropy[i * len(Temp) + j] = Entropy[i * len(Temp) + j] + ent[j]
       Cp[i * len(Temp) + j] = Cp[i * len(Temp) + j] + cp[j]
-#         Thermal[i*len(Temp)+j]=Thermal[i*len(Temp)+j]+dh[j]
 
     # vibrational
     (ent, cp, dh, q) = molecule.getVibrationalThermo(oFile, data.Temp, data.scale)
@@ -72,9 +72,6 @@ def main():
       Entropy[i * len(Temp) + j] = Entropy[i * len(Temp) + j] + ent[j]
       Cp[i * len(Temp) + j] = Cp[i * len(Temp) + j] + cp[j]
       Thermal[i * len(Temp) + j] = Thermal[i * len(Temp) + j] + dh[j]
-      # Partition[i*len(Temp)+j] = Partition[i*len(Temp)+j]*q[j]
-      # print '%12.2f'%float(ent[j]),
-    # print '\n'
 
     # Internal rotational
     if molecule.numRotors != 0:
@@ -83,9 +80,6 @@ def main():
         Entropy[i * len(Temp) + j] = Entropy[i * len(Temp) + j] + ent[j]
         Cp[i * len(Temp) + j] = Cp[i * len(Temp) + j] + cp[j]
         Thermal[i * len(Temp) + j] = Thermal[i * len(Temp) + j] + dh[j]
-        # Partition[i*len(Temp)+j] = Partition[i*len(Temp)+j]*q[j]
-        # print '%12.2f'%float(ent[j]),
-    # print '\n'
 
     # External rotational
     (ent, cp, dh) = molecule.getExtRotationalThermo(oFile, data.Temp)
@@ -93,13 +87,11 @@ def main():
       Entropy[i * len(Temp) + j] = Entropy[i * len(Temp) + j] + ent[j]
       Cp[i * len(Temp) + j] = Cp[i * len(Temp) + j] + cp[j]
       Thermal[i * len(Temp) + j] = Thermal[i * len(Temp) + j] + dh[j]
-#         Partition[i*len(Temp)+j] = Thermal[i*len(Temp)+j]+q[j]
 
     for j in range(len(Temp)):
       Entropy[i * len(Temp) + j] = Entropy[i * len(Temp) +
                                            j] + 1.985 * math.log(molecule.nelec)
 
-    # print Enthalpy
     H = molecule.Energy
     atoms = readGeomFc.getAtoms(molecule.Mass)
     atomsH = 0.0
@@ -108,7 +100,7 @@ def main():
     if molecule.Etype == 'g3':
       atomE = data.atomEg3
     if molecule.Etype == 'ccsdtf12':
-      atomE = data.atomEccsdtf12  
+      atomE = data.atomEccsdtf12
     for atom in atoms:
       H -= atomE[atom]
       atomsH += data.atomH[atom]
@@ -125,10 +117,6 @@ def main():
     for c in range(1, 8):
       print('%12.2f' % Cp[i * len(Temp) + c]),
     print('\n')
-
-    # for c in range(len(Temp)):
-    #   print '%12.2e'%Partition[i*len(Temp)+c],
-    # print
 
   if len(data.MoleculeList) == 1:
     return
@@ -148,6 +136,7 @@ def main():
                   (1.44 * data.MoleculeList[1].imagFreq / Temp[j]))**2
       A[j, :] = mat([1.0, math.log(Temp[j]), -1.0 / 1.985 / Temp[j]])
       y[j] = log(rate[j])
+
   b = linalg.inv(transpose(A) * A) * (transpose(A) * y)
   oFile.write('\n\nRate Data\n')
   oFile.write('r = A*(T/1000)^n*exp(-Ea/R/T)' + '%12.2e' % (exp(b[0]) * 1000.0**float(b[1])) + '%10.2f' % b[1] + '%12.2f' % (b[2] / 1.0e3) +
@@ -155,6 +144,7 @@ def main():
   oFile.write('r = A*T^n*exp(-Ea/R/T)' + '%12.2e' %
               (exp(b[0])) + '%10.2f' % b[1] + '%12.2f' % (b[2] / 1.0e3) + '\n')
   oFile.write('%12s' % 'Temperature' + '%12s\n' % 'Rate')
+  
   for j in range(len(Temp)):
     fitrate = exp(b[0]) * Temp[j]**float(b[1]) * exp(-b[2] / 1.985 / Temp[j])
     oFile.write('%12.2f' % Temp[j] + '%12.2e' % rate[j] + '%12.2e\n' % fitrate)

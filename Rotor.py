@@ -95,9 +95,4 @@ class Rotor:
       Ux = Ux + Mass[i] * x[i]
       Uy = Uy + Mass[i] * y[i]
 
-    # print Uy
-    # print self.atomsList, Mass
-    # print geom
-    # exit()
     self.moments = [A, B, C, Ux]
-    # print self.moments

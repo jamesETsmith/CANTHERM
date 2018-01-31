@@ -2,9 +2,6 @@ from numpy import *
 import pdb
 import readGeomFc
 import math
-#import Gnuplot
-#import Gnuplot.funcutils
-
 
 class Harmonics:
   numFit = 0
@@ -67,20 +64,10 @@ class Harmonics:
     self.A = float(b[0])
     self.numFit = 5
 
-    # print self.Kcos
-    # print self.Ksin
-
-    # print "Potential-Read Potential-Fit"
     pot = []
     for i in range(3 * nfit + 1):
       angle = i * 360 / 3 / nfit
       pot.append([angle, self.getPotential(angle)])
-    #   print '%14.2f'%potentials[i]+'%14.3f'%pot[i]
-    # print
-    # g=Gnuplot.Gnuplot()
-    #g('set data style linespoints')
-    #g('set xrange [0:360]')
-    # g.plot(potgiven,pot)
-    #raw_input('Please press enter to continue ...\n')
+
 
     return
