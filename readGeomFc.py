@@ -363,9 +363,7 @@ def readEnergy(file, string):
         Energy = re.search('G3\(0 K\)= ' + ' \s*([\-0-9.]+)', com).group(1)
 
     elif string == 'ub3lyp':
-        print(re.findall("E\(UB3LYP\) = " , "701*"))
-        Energy = re.search(
-            'Sum of electronic and thermal Free Energies=' + ' \s*([\-0-9.]+)', com).group(1)
+        Energy = re.findall("E\(UB3LYP\) = " + "\s*([\-0-9.]+)", com)[-1]
     return float(Energy)
 
 
