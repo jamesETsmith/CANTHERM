@@ -13,9 +13,9 @@ harmonic = Harmonics(5, Kcos, Ksin)
 harmonic.fitPotential(file)
 
 for i in range(5):
-  print(harmonic.Kcos[i], harmonic.Ksin[i])
+    print(harmonic.Kcos[i], harmonic.Ksin[i])
 
 for i in range(5):
-  print(harmonic.Kcos[i], " ", "%3.1f" % (float(i + 1)))
+    print(harmonic.Kcos[i], " ", "%3.1f" % (float(i + 1)))
 for i in range(5):
-  print(harmonic.Ksin[i], " ", "%3.1f" % (float(i + 1)))
+    print(harmonic.Ksin[i], " ", "%3.1f" % (float(i + 1)))

@@ -22,56 +22,56 @@ energy_base = readGeomFc.readHFEnergy(inputFiles[0][:-4] + '_rot0_6.log')
 numRotors = 4
 harmonics.write(str(len(inputFiles)) + '\n')
 for files in inputFiles:
-  y = matrix(zeros((13, 1), dtype=float))
-  x = matrix(zeros((13, 11), dtype=float))
-  energy = readGeomFc.readHFEnergy(files[:-4] + '_rot0_6.log')
+    y = matrix(zeros((13, 1), dtype=float))
+    x = matrix(zeros((13, 11), dtype=float))
+    energy = readGeomFc.readHFEnergy(files[:-4] + '_rot0_6.log')
 #    harmonics.write(files+'\n')
-  (geom, Mass) = readGeomFc.readGeom(open(files, 'r'))
-  inertia = open('inertia.dat', 'r')
-  (rotors) = readGeomFc.readGeneralInertia(inertia, Mass)
-  if (files == inputFiles[0]):
-    K = geomUtility.calculateD32(geom, Mass, rotors)
-    detD = 1.0
+    (geom, Mass) = readGeomFc.readGeom(open(files, 'r'))
+    inertia = open('inertia.dat', 'r')
+    (rotors) = readGeomFc.readGeneralInertia(inertia, Mass)
+    if (files == inputFiles[0]):
+        K = geomUtility.calculateD32(geom, Mass, rotors)
+        detD = 1.0
+        for i in range(numRotors):
+            print(K[i])
+            detD = detD * K[i]
+        harmonics.write(str(float(detD)) + '\n')
+    harmonics.write(str((energy - energy_base) * 627.5095) + '\n')
+    if (energy < energy_base):
+        print(files, " has lower energy")
+        exit()
     for i in range(numRotors):
-      print(K[i])
-      detD = detD * K[i]
-    harmonics.write(str(float(detD)) + '\n')
-  harmonics.write(str((energy - energy_base) * 627.5095) + '\n')
-  if (energy < energy_base):
-    print(files, " has lower energy")
-    exit()
-  for i in range(numRotors):
-    potgiven = []
-    for j in range(13):
-      angle = (-60.0 + j * 120.0 / 12.0) * 2 * math.pi / 360.0
-      fname = files[:-4] + '_rot' + str(i) + '_' + str(j) + '.log'
-      y[j] = (readGeomFc.readHFEnergy(fname) - energy) * 627.5095
-      x[j, 0] = 1.0
-      for k in range(5):
-        x[j, k + 1] = cos((k + 1) * angle)
-        x[j, k + 6] = sin((k + 1) * angle)
+        potgiven = []
+        for j in range(13):
+            angle = (-60.0 + j * 120.0 / 12.0) * 2 * math.pi / 360.0
+            fname = files[:-4] + '_rot' + str(i) + '_' + str(j) + '.log'
+            y[j] = (readGeomFc.readHFEnergy(fname) - energy) * 627.5095
+            x[j, 0] = 1.0
+            for k in range(5):
+                x[j, k + 1] = cos((k + 1) * angle)
+                x[j, k + 6] = sin((k + 1) * angle)
 
-      potgiven.append([angle, float(y[j])])
+            potgiven.append([angle, float(y[j])])
 
-    XtX = transpose(x) * x
-    XtY = transpose(x) * y
-    b = linalg.inv(XtX) * XtY
+        XtX = transpose(x) * x
+        XtY = transpose(x) * y
+        b = linalg.inv(XtX) * XtY
 
-    print('rotor', i, files)
+        print('rotor', i, files)
 
-    pot = []
-    for j in range(21):
-      angle = (-60.0 + j * 120 / 20.0) * 2 * math.pi / 360.0
-      v = b[0]
-      for k in range(5):
-        v = v + b[k + 1] * cos((k + 1) * angle) + \
-            b[k + 6] * sin((k + 1) * angle)
-      pot.append([angle, v])
+        pot = []
+        for j in range(21):
+            angle = (-60.0 + j * 120 / 20.0) * 2 * math.pi / 360.0
+            v = b[0]
+            for k in range(5):
+                v = v + b[k + 1] * cos((k + 1) * angle) + \
+                    b[k + 6] * sin((k + 1) * angle)
+            pot.append([angle, v])
 
-    harmonics.write(str(float(b[0])) + '\n')
-    for k in range(5):
-      harmonics.write(str(float(b[k + 1])) + '\t' + str(float(b[k + 6])) + '\n')
+        harmonics.write(str(float(b[0])) + '\n')
+        for k in range(5):
+            harmonics.write(str(float(b[k + 1])) +
+                            '\t' + str(float(b[k + 6])) + '\n')
+        harmonics.write('\n')
+
     harmonics.write('\n')
-
-
-  harmonics.write('\n')

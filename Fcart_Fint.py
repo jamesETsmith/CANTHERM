@@ -26,8 +26,8 @@ inertia = open('inertia.dat', 'r')
 
 # make the full cartesian force constant matrix
 for i in range(0, 3 * Mass.size):
-  for j in range(i, 3 * Mass.size):
-    Fc[i, j] = Fc[j, i]
+    for j in range(i, 3 * Mass.size):
+        Fc[i, j] = Fc[j, i]
 
 (pivots, rotAtoms, numRotors) = readGeomFc.readInertia(inertia)
 
@@ -35,24 +35,24 @@ intRotMatrix = matrix(array(zeros((3 * Mass.size, numRotors), dtype=float)))
 
 # form cartesian vectors for all rotors
 for i in range(numRotors):
-  e12 = matrix('0 0 0')
-  e21 = matrix('0 0 0')
-  e12 = geom[pivots[2 * i] - 1, :] - geom[pivots[2 * i + 1] - 1, :]
-  e12 = e12 / linalg.norm(e12)
-  e21 = -e12
-  atoms1 = rotAtoms[2 * i]
-  atoms2 = rotAtoms[2 * i + 1]
-  for j in atoms1:
-    e31 = geom[j - 1, :] - geom[pivots[2 * i] - 1, :]
-    #e31 = e31/linalg.norm(e31)
-    intRotMatrix[3 * (j - 1):3 * j, i] = transpose(cross(e31, e12))
-  for j in atoms2:
-    e42 = geom[j - 1, :] - geom[pivots[2 * i + 1] - 1, :]
-    intRotMatrix[3 * (j - 1):3 * j, i] = transpose(cross(e42, e21))
+    e12 = matrix('0 0 0')
+    e21 = matrix('0 0 0')
+    e12 = geom[pivots[2 * i] - 1, :] - geom[pivots[2 * i + 1] - 1, :]
+    e12 = e12 / linalg.norm(e12)
+    e21 = -e12
+    atoms1 = rotAtoms[2 * i]
+    atoms2 = rotAtoms[2 * i + 1]
+    for j in atoms1:
+        e31 = geom[j - 1, :] - geom[pivots[2 * i] - 1, :]
+        #e31 = e31/linalg.norm(e31)
+        intRotMatrix[3 * (j - 1):3 * j, i] = transpose(cross(e31, e12))
+    for j in atoms2:
+        e42 = geom[j - 1, :] - geom[pivots[2 * i + 1] - 1, :]
+        intRotMatrix[3 * (j - 1):3 * j, i] = transpose(cross(e42, e21))
 
 # make all the modes of unit length
 for i in range(numRotors):
-  intRotMatrix[:, i] = intRotMatrix[:, i] / linalg.norm(intRotMatrix[:, i])
+    intRotMatrix[:, i] = intRotMatrix[:, i] / linalg.norm(intRotMatrix[:, i])
 
 # make the int Rotors Orthonormal
 intRotMatrix = matrix(orth(intRotMatrix))
@@ -61,13 +61,16 @@ intRotMatrix = matrix(orth(intRotMatrix))
 # make translation and rotation unit vectors
 tranrot = matrix(zeros((3 * Mass.size, 6), dtype=float))
 for i in range(Mass.size):
-  tranrot[3 * i, 0] = 1.0
-  tranrot[3 * i + 1, 1] = 1.0
-  tranrot[3 * i + 2, 2] = 1.0
+    tranrot[3 * i, 0] = 1.0
+    tranrot[3 * i + 1, 1] = 1.0
+    tranrot[3 * i + 2, 2] = 1.0
 
-  tranrot[3 * i:3 * i + 3, 3] = transpose(matrix([0, -geom[i, 2], geom[i, 1]]))
-  tranrot[3 * i:3 * i + 3, 4] = transpose(matrix([geom[i, 2], 0, -geom[i, 0]]))
-  tranrot[3 * i:3 * i + 3, 5] = transpose(matrix([-geom[i, 1], geom[i, 0], 0]))
+    tranrot[3 * i:3 * i + 3,
+            3] = transpose(matrix([0, -geom[i, 2], geom[i, 1]]))
+    tranrot[3 * i:3 * i + 3,
+            4] = transpose(matrix([geom[i, 2], 0, -geom[i, 0]]))
+    tranrot[3 * i:3 * i + 3,
+            5] = transpose(matrix([-geom[i, 1], geom[i, 0], 0]))
 
 tranrot = matrix(orth(tranrot))
 P = tranrot * transpose(tranrot)
@@ -82,8 +85,8 @@ Fc = (I - P) * Fc * (I - P)
 
 Tcmc = mat(zeros((3 * Mass.size, 3 * Mass.size), dtype=float))
 for i in range(Mass.size):
-  for j in range(3):
-    Tcmc[(i) * 3 + j, (i) * 3 + j] = 1.0 / sqrt(Mass[i])
+    for j in range(3):
+        Tcmc[(i) * 3 + j, (i) * 3 + j] = 1.0 / sqrt(Mass[i])
 
 
 Fc = Tcmc * (Fc * Tcmc)
@@ -93,13 +96,13 @@ Fc = Tcmc * (Fc * Tcmc)
 v = Tcmc * v
 
 for i in range(3 * Mass.size):
-  v[:, i] = v[:, i] / linalg.norm(v[:, i])
+    v[:, i] = v[:, i] / linalg.norm(v[:, i])
 
 num = Mass.size
 l = sort(l)
 for i in range(len(l) / 3):
-  for j in range(3):
-    print(sqrt(l[3 * i + j] * (627.5095 * 4180 / 6.023e23) *
-               (1.88972e10**2) * (1 / 1.67e-27)) / 2 / math.pi / 3e10, '\t')
-  print
+    for j in range(3):
+        print(sqrt(l[3 * i + j] * (627.5095 * 4180 / 6.023e23) *
+                   (1.88972e10**2) * (1 / 1.67e-27)) / 2 / math.pi / 3e10, '\t')
+    print
 print
