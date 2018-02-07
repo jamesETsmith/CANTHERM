@@ -1,4 +1,4 @@
-from numpy import *
+#R = self.Rfrom numpy import *
 import pdb
 import readGeomFc
 from Harmonics import *
@@ -6,16 +6,15 @@ from scipy import *
 import scipy.linalg
 #import random
 import geomUtility
-#import Gnuplot
 import os
-#from constants import *
+from constants import *
 
 
 class Molecule:
-    R = 1.985
-    kb = 1.38065e-23
-    h = 6.626e-34
-    amu = 1.6605e-27
+    # R = 1.985
+    # kb = 1.38065e-23
+    # h = 6.626e-34
+    # amu = 1.6605e-27
 # has other attributes
 #geom, Mass, Fc, linearity, Energy, Etype, extSymm, nelec, rotors, potentialFile, Iext, ebase, bonds
 
@@ -100,7 +99,9 @@ class Molecule:
                 i = i + len(tokens)
                 for j in tokens:
                     if float(j) < 0 and self.TS:
-                        self.imagFreq = -1 * sqrt(-1 * float(j) * (627.5095 * 4180 / 6.023e23) * (1.88972e10**2) * (1 / 1.67e-27)) / 2 / math.pi / 3e10
+                        print("Imaginary Freq", j)
+                        self.imagFreq = float(j)
+                        # self.imagFreq = -1 * sqrt(-1 * float(j) * (627.5095 * 4180 / 6.023e23) * (1.88972e10**2) * (1 / 1.67e-27)) / 2 / math.pi / 3e10
                         continue
                     self.Freq.append(float(j))
 
@@ -386,10 +387,10 @@ class Molecule:
         ent = []
         cp = []
         dH = []
-        R = self.R
-        kb = self.kb
-        h = self.h
-        amu = self.amu
+        # #R = self.R
+        #kb = self.kb
+        #h = self.h
+        #amu = self.amu
         oFile.write('Translational Contributions\n')
         oFile.write('%12s' % 'Temperature')
         for T in Temp:
@@ -425,10 +426,10 @@ class Molecule:
         cp = []
         dH = []
         parti = []
-        R = self.R
-        kb = self.kb
-        h = self.h
-        amu = self.amu
+        # #R = self.R
+        #kb = self.kb
+        #h = self.h
+        #amu = self.amu
         oFile.write('\nVibrational Contributions\n')
         Freq = []
         for freq in self.Freq:
@@ -528,10 +529,10 @@ class Molecule:
         ent = []
         cp = []
         dH = []
-        R = self.R
-        kb = self.kb
-        h = self.h
-        amu = self.amu
+        # #R = self.R
+        #kb = self.kb
+        #h = self.h
+        #amu = self.amu
         seed = 500
         numIter = 100000
 
@@ -647,10 +648,10 @@ class Molecule:
         cp = [0.0] * len(Temp)
         dH = [0.0] * len(Temp)
         parti = [1.0] * len(Temp)
-        R = self.R
-        kb = self.kb
-        h = self.h
-        amu = self.amu
+        #R = self.R
+        #kb = self.kb
+        #h = self.h
+        #amu = self.amu
 
         oFile.write('\n\nInternal Rotational Contributions\n')
         oFile.write('%12s' % 'Temperature')
@@ -719,11 +720,11 @@ class Molecule:
 #**************************************************************************
 
     def calculateElevels(self):
-        R = self.R
+        #R = self.R
 
-        kb = self.kb
-        h = self.h
-        amu = self.amu
+        #kb = self.kb
+        #h = self.h
+        #amu = self.amu
         K = geomUtility.calculateD32(self.geom, self.Mass, self.rotors)
         E = []
         # let us take k = -500, 500
@@ -751,10 +752,10 @@ class Molecule:
 #**************************************************************************
 
     def getExtRotationalThermo(self, oFile, Temp):
-        kb = self.kb
-        h = self.h
-        amu = self.amu
-        R = self.R
+        #kb = self.kb
+        #h = self.h
+        #amu = self.amu
+        #R = self.R
 
         S = []
         ent = []

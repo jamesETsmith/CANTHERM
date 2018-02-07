@@ -6,11 +6,11 @@ import pdb
 import math
 from numpy import *
 from scipy import *
-#from constants import *
-R = 1.985
-kb = 1.38065e-23
-h = 6.626e-34
-amu = 1.6605e-27
+from constants import *
+# R = 1.985
+# kb = 1.38065e-23
+# h = 6.626e-34
+# amu = 1.6605e-27
 
 class CanTherm:
     CalcType = ''
@@ -109,7 +109,7 @@ def main():
         if molecule.Etype == 'ccsdtf12':
             atomE = data.atomEccsdtf12
         if molecule.Etype == 'ub3lyp':
-            atomE = data.atomEub3lyp    
+            atomE = data.atomEub3lyp
         for atom in atoms:
             H -= atomE[atom]
             atomsH += data.atomH[atom]
@@ -140,9 +140,10 @@ def main():
             rate[j] = (kb * Temp[j] / h) * math.exp((Entropy[len(Temp) + j] - Entropy[j]) / R) * \
                 math.exp(-(data.MoleculeList[1].Energy - data.MoleculeList[0].Energy)
                          * 627.5095 * 1.0e3 / R / Temp[j])
-            # wigner correction
+
+            # Wigner correction (see doi:10.1103/PhysRev.40.749 and doi:10.1039/TF9595500001)
             rate[j] *= (1.0 + 1.0 / 24.0 *
-                        (1.44 * data.MoleculeList[1].imagFreq / Temp[j]))**2
+                       (h * abs(data.MoleculeList[1].imagFreq) * c_in_cm / (Temp[j] * kb) ))**2
             A[j, :] = mat([1.0, math.log(Temp[j]), -1.0 / R / Temp[j]])
             y[j] = log(rate[j])
 
