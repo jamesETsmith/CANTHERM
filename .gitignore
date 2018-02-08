@@ -13,9 +13,13 @@ _*
 *backup
 
 ### Unnecessary Manual Files ###
-*log
+#*log
 *aux
 *pdf
 *dvi
 *toc
 *bbl
+
+### Batch Files ###
+submit.sh
+summit.sh
