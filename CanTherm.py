@@ -142,8 +142,10 @@ def main():
                          * 627.5095 * 1.0e3 / R / Temp[j])
 
             # Wigner correction (see doi:10.1103/PhysRev.40.749 and doi:10.1039/TF9595500001)
-            rate[j] *= (1.0 + 1.0 / 24.0 *
-                       (h * abs(data.MoleculeList[1].imagFreq) * c_in_cm / (Temp[j] * kb) ))**2
+            kappa = (1.0 + 1.0 / 24.0 *
+                       (h * abs(data.MoleculeList[1].imagFreq) * c_in_cm / (Temp[j] * kb) )**2)
+            oFile.write('KAPPA: %f\n' % kappa)
+            rate[j] *= kappa
             A[j, :] = mat([1.0, math.log(Temp[j]), -1.0 / R / Temp[j]])
             y[j] = log(rate[j])
 
