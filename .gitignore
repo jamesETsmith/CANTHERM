@@ -13,7 +13,7 @@ _*
 *backup
 
 ### Unnecessary Manual Files ###
-#*log
+manual.log
 *aux
 *pdf
 *dvi
@@ -23,3 +23,8 @@ _*
 ### Batch Files ###
 submit.sh
 summit.sh
+
+
+### Examples Files ###
+examples/h-transf/RMG_compare/cantherm.log
+examples/h-transf/RMG_compare/chem.inp

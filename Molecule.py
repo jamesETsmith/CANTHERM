@@ -335,6 +335,21 @@ class Molecule:
 
         # print
 
+#*************************************************************************
+
+    def printContributions(self,oFile,Temp,ent,cp,dH):
+        oFile.write('%12s' % 'Temperature (K)')
+        oFile.write('%12s' % 'Entropy')
+        oFile.write('%12s' % 'Cp')
+        oFile.write('%12s' % 'dH\n')
+
+        # iterate over temperatures
+        for i in range(len(Temp)):
+            oFile.write('%12.2f' % Temp[i])
+            oFile.write('%12.2f' % ent[i])
+            oFile.write('%12.2f' % cp[i])
+            oFile.write('%12.2f\n' % dH[i])
+        return
 
 #*************************************************************************
 
@@ -381,68 +396,52 @@ class Molecule:
             oFile.write('\n')
             k = k + 1
 
+
 #*************************************************************************
 
     def getTranslationThermo(self, oFile, Temp):
         ent = []
         cp = []
         dH = []
-        # #R = self.R
-        #kb = self.kb
-        #h = self.h
-        #amu = self.amu
         oFile.write('Translational Contributions\n')
-        oFile.write('%12s' % 'Temperature')
-        for T in Temp:
-            oFile.write('%12.2f' % T)
-        oFile.write('\n%12s' % 'Entropy')
+
         i = 0
         for T in Temp:
             ent.append(R * math.log((2.0 * math.pi * self.Mass.sum() * amu *
                                      kb * T / h**2)**(1.5) * (kb * T * math.e**(2.5) / 1.013e5)))
-            oFile.write('%12.2f' % ent[i])
             i = i + 1
 
-        oFile.write('\n%12s' % 'Cp')
         i = 0
         for T in Temp:
             cp.append(5.0 / 2 * R)
-            oFile.write('%12.2f' % cp[i])
             i = i + 1
 
-        oFile.write('\n%12s' % 'dH')
         i = 0
         for T in Temp:
             dH.append(5.0 / 2 * R * T / 1000.0)
-            oFile.write('%12.2f' % dH[i])
             i = i + 1
-        oFile.write('\n')
+
+        self.printContributions(oFile,Temp,ent,cp,dH)
+
         return ent, cp, dH
 
 #*************************************************************************
 
     def getVibrationalThermo(self, oFile, Temp, scale):
+        # print("SCALE: ", scale) TODO
         ent = []
         cp = []
         dH = []
         parti = []
-        # #R = self.R
-        #kb = self.kb
-        #h = self.h
-        #amu = self.amu
+
         oFile.write('\nVibrational Contributions\n')
         Freq = []
         for freq in self.Freq:
             Freq.append(freq * scale)
 
-        oFile.write('Entropy:\n')
-        oFile.write('%12s' % 'Temperature')
-
         for T in Temp:
-            oFile.write('%12.2f' % T)
             ent.append(0.0)
             parti.append(1.0)
-        oFile.write('\n')
 
         # get vibrational contribution to entropy
         j = 0
@@ -450,7 +449,6 @@ class Molecule:
         for freq in Freq:
             i = 0
             f = 'Freq: ' + '%2.0f' % (j + 1)
-            # oFile.write('%12s'%f)
 
             for T in Temp:
                 s = -R * math.log(1.0 - math.exp(-h * freq * 3.0e10 / kb / T))
@@ -461,65 +459,37 @@ class Molecule:
                 parti[i] = parti[i] * 1.0 / \
                     (1.0 - math.exp(-h * freq * 3.0e10 / kb / T))
                 i = i + 1
-                # print T, freq, s
-            # oFile.write('\n')
             j = j + 1
-        oFile.write('%12s' % 'Entropy')
-        for i in range(len(Temp)):
-            oFile.write('%12.2f' % ent[i])
-        oFile.write('\n')
 
-        # get vibrational contribution to cp
-        # oFile.write('\nCp:\n')
-        # oFile.write('%12s'%'Temperature')
         for T in Temp:
-            # oFile.write('%12.2f'%T)
             cp.append(0.0)
-        # oFile.write('\n')
 
         j = 0
         for freq in Freq:
             i = 0
             f = 'Freq: ' + '%2.0f' % (j + 1)
-            # oFile.write('%12s'%f)
             for T in Temp:
                 c = R * (h * freq * 3.0e10 / kb / T)**2 * math.exp(h * freq *
                                                                    3.0e10 / kb / T) / (1.0 - math.exp(h * freq * 3.0e10 / kb / T))**2
-                # oFile.write('%12.2f'%c)
                 cp[i] = cp[i] + c
                 i = i + 1
-            # oFile.write('\n')
             j = j + 1
-        oFile.write('%12s' % 'Cp')
-        for i in range(len(Temp)):
-            oFile.write('%12.2f' % cp[i])
-        oFile.write('\n')
 
-        # get vibrational conbribution to thermal correction
-        # oFile.write('\ndH\n')
-        # oFile.write('%12s'%'Temperature')
         for T in Temp:
-            # oFile.write('%12.2f'%T)
             dH.append(0.0)
-        # oFile.write('\n')
 
         j = 0
         for freq in Freq:
             i = 0
             f = 'Freq: ' + '%2.0f' % (j + 1)
-            # oFile.write('%12s'%f)
             for T in Temp:
                 h1 = 6.023e23 * (h * freq * 3.0e10) / \
                     (math.exp(h * freq * 3.0e10 / kb / T) - 1.0) / 4180.0
-                # oFile.write('%12.2f'%h1)
                 dH[i] = dH[i] + h1
                 i = i + 1
-            # oFile.write('\n')
             j = j + 1
-        oFile.write('%12s' % 'dH')
-        for i in range(len(Temp)):
-            oFile.write('%12.2f' % dH[i])
-        oFile.write('\n')
+
+        self.printContributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH, parti
 
@@ -529,19 +499,11 @@ class Molecule:
         ent = []
         cp = []
         dH = []
-        # #R = self.R
-        #kb = self.kb
-        #h = self.h
-        #amu = self.amu
         seed = 500
         numIter = 100000
 
         oFile.write('\n\nInternal Rotational Contributions\n')
-        oFile.write('%12s' % 'Temperature')
 
-        # iterate over temperatures
-        for T in Temp:
-            oFile.write('%12.2f' % T)
 
         sigma = 1.0
         for rotor in self.rotors:
@@ -624,18 +586,7 @@ class Molecule:
             dH.append(H / 1e3)
             cp.append(Cp)
 
-        oFile.write('\n%12s' % 'Entropy')
-        for i in range(len(Temp)):
-            oFile.write('%12.2f' % ent[i])
-
-        oFile.write('\n%12s' % 'Cp')
-        for i in range(len(Temp)):
-            oFile.write('%12.2f' % cp[i])
-
-        oFile.write('\n%12s' % 'dH')
-        for i in range(len(Temp)):
-            oFile.write('%12.2f' % dH[i])
-        # oFile.write('\n')
+        self.printContributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH
 
@@ -648,17 +599,8 @@ class Molecule:
         cp = [0.0] * len(Temp)
         dH = [0.0] * len(Temp)
         parti = [1.0] * len(Temp)
-        #R = self.R
-        #kb = self.kb
-        #h = self.h
-        #amu = self.amu
-
         oFile.write('\n\nInternal Rotational Contributions\n')
-        oFile.write('%12s' % 'Temperature')
 
-        # iterate over temperatures
-        for T in Temp:
-            oFile.write('%12.2f' % T)
 
         sigma = 1.0
         for rotor in self.rotors:
@@ -672,8 +614,6 @@ class Molecule:
                 ddv = ddv - 1 * harm.Kcos[l] * (l + 1)**2
             freq = 1.0 / 2.0 / pi * \
                 sqrt(ddv * 4180.0 / K[irot] / 1.0e-20 / amu / 6.023e23) / 3.0e10
-            # print '%12.2f'%float(freq),
-        # print
 
         # calculate the energy levels for the hindered rotors
         E = self.calculateElevels()
@@ -699,32 +639,14 @@ class Molecule:
                 cp[iT] = cp[iT] + (v2sum * sum - vsum**2) / sum**2 / R / T**2
                 parti[iT] = parti[iT] * sum
 
-                #print (v2sum*sum-vsum**2)/sum**2/R/T**2,
 
-                # print R*math.log(sum)+vsum/sum/T-R*log(self.rotors[irot+1].symm),
-            # print
-        oFile.write('\n%12s' % 'Entropy')
-        for i in range(len(Temp)):
-            oFile.write('%12.2f' % ent[i])
-
-        oFile.write('\n%12s' % 'Cp')
-        for i in range(len(Temp)):
-            oFile.write('%12.2f' % cp[i])
-
-        oFile.write('\n%12s' % 'dH')
-        for i in range(len(Temp)):
-            oFile.write('%12.2f' % dH[i])
+        self.printContributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH, parti
 
 #**************************************************************************
 
     def calculateElevels(self):
-        #R = self.R
-
-        #kb = self.kb
-        #h = self.h
-        #amu = self.amu
         K = geomUtility.calculateD32(self.geom, self.Mass, self.rotors)
         E = []
         # let us take k = -500, 500
@@ -752,23 +674,12 @@ class Molecule:
 #**************************************************************************
 
     def getExtRotationalThermo(self, oFile, Temp):
-        #kb = self.kb
-        #h = self.h
-        #amu = self.amu
-        #R = self.R
-
         S = []
         ent = []
         cp = []
         dH = []
 
         oFile.write('\n\nExternal Rotational Contributions\n')
-        oFile.write('%12s' % 'Temperature')
-
-        # iterate over temperatures
-        for T in Temp:
-            oFile.write('%12.2f' % T)
-
         for T in Temp:
             S = log(math.pi**0.5 * exp(1.5) / self.extSymm)
             for j in range(3):
@@ -779,18 +690,7 @@ class Molecule:
             cp.append(3.0 * R / 2.0)
             dH.append(3.0 * R * T / 2.0 / 1.0e3)
 
-        oFile.write('\n%12s' % 'Entropy')
-        for i in range(len(Temp)):
-            oFile.write('%12.2f' % ent[i])
-
-        oFile.write('\n%12s' % 'Cp')
-        for i in range(len(Temp)):
-            oFile.write('%12.2f' % cp[i])
-
-        oFile.write('\n%12s' % 'dH')
-        for i in range(len(Temp)):
-            oFile.write('%12.2f' % dH[i])
-        oFile.write('\n\n\n\n')
+        self.printContributions(oFile,Temp,ent,cp,dH)
         return ent, cp, dH
 
 

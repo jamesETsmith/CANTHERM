@@ -12,6 +12,10 @@ from constants import *
 # h = 6.626e-34
 # amu = 1.6605e-27
 
+def wigner_correction(T, freq, scale):
+    print("IMAG. FREQ = ", freq)
+    return (1.0 + 1.0 / 24.0 * (h * abs(freq) * scale * c_in_cm / (T * kb) )**2)
+
 class CanTherm:
     CalcType = ''
     ReacType = ''
@@ -135,6 +139,7 @@ def main():
     y = matrix(zeros((len(Temp), 1), dtype=float))
 
     rate = [0.0] * len(Temp)
+    kappa = []
     for j in range(len(Temp)):
         if (data.ReacType == 'Unimol'):
             rate[j] = (kb * Temp[j] / h) * math.exp((Entropy[len(Temp) + j] - Entropy[j]) / R) * \
@@ -142,10 +147,10 @@ def main():
                          * 627.5095 * 1.0e3 / R / Temp[j])
 
             # Wigner correction (see doi:10.1103/PhysRev.40.749 and doi:10.1039/TF9595500001)
-            kappa = (1.0 + 1.0 / 24.0 *
-                       (h * abs(data.MoleculeList[1].imagFreq) * c_in_cm / (Temp[j] * kb) )**2)
-            oFile.write('KAPPA: %f\n' % kappa)
-            rate[j] *= kappa
+            kappa.append( wigner_correction(Temp[j], data.MoleculeList[1].imagFreq, data.scale ) )
+            # oFile.write('KAPPA: %f\n' % kappa)
+
+            rate[j] *= kappa[j]
             A[j, :] = mat([1.0, math.log(Temp[j]), -1.0 / R / Temp[j]])
             y[j] = log(rate[j])
 
@@ -156,14 +161,14 @@ def main():
     oFile.write('r = A*(T/1000)^n*exp(-Ea/R/T)' + '%12.2e' % (exp(b[0]) * 1000.0**float(b[1])) + '%10.2f' % b[1] + '%12.2f' % (b[2] / 1.0e3) +
                 '\n') #TODO what is this?
     oFile.write('r = A*T^n*exp(-Ea/R/T)' + '%12.2e' %
-                (exp(b[0])) + '%10.2f' % b[1] + '%12.2f' % (b[2] / 1.0e3) + '\n')
-    oFile.write('%12s' % 'Temperature' + '%12s\n' % 'Rate')
+                (exp(b[0])) + '%10.2f' % b[1] + '%12.2f' % (b[2] / 1.0e3) + '\n\n')
+    oFile.write('%12s' % 'Temperature' + '%12s' % 'Rate'+ '%12s' % 'FitRate'  + '%12s\n' % 'Kappa')
 
     for j in range(len(Temp)):
         fitrate = exp(b[0]) * Temp[j]**float(b[1]) * \
             exp(-b[2] / R / Temp[j])
         oFile.write('%12.2f' % Temp[j] + '%12.2e' %
-                    rate[j] + '%12.2e\n' % fitrate)
+                    rate[j] + '%12.2e' % fitrate + '%12.2f\n' % kappa[j])
     oFile.write('\n\n')
     oFile.close()
 
