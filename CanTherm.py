@@ -7,13 +7,10 @@ import math
 from numpy import *
 from scipy import *
 from constants import *
-# R = 1.985
-# kb = 1.38065e-23
-# h = 6.626e-34
-# amu = 1.6605e-27
+
 
 def wigner_correction(T, freq, scale):
-    print("IMAG. FREQ = ", freq)
+    # see doi:10.1103/PhysRev.40.749 and doi:10.1039/TF9595500001
     return (1.0 + 1.0 / 24.0 * (h * abs(freq) * scale * c_in_cm / (T * kb) )**2)
 
 class CanTherm:
@@ -49,7 +46,7 @@ class CanTherm:
 def main():
     data = CanTherm()
     inputFile = open(sys.argv[1], 'r')
-    oFile = open('cantherm.out', 'w')
+    oFile = open('output', 'w')
     readGeomFc.readInputFile(inputFile, data)
 
     data.Entropy = len(data.MoleculeList) * len(data.Temp) * [0.0]
@@ -101,7 +98,7 @@ def main():
 
         for j in range(len(Temp)):
             Entropy[i * len(Temp) + j] = Entropy[i * len(Temp) +
-                                                 j] + R * math.log(molecule.nelec)
+                                                 j] + R_kcal * math.log(molecule.nelec)
 
         H = molecule.Energy
         atoms = readGeomFc.getAtoms(molecule.Mass)
@@ -117,7 +114,7 @@ def main():
         for atom in atoms:
             H -= atomE[atom]
             atomsH += data.atomH[atom]
-        H = H * 627.5095 + atomsH
+        H = H * ha_to_kcal + atomsH
 
         if molecule.Etype == 'cbsqb3':
             b = 0
@@ -144,14 +141,12 @@ def main():
         if (data.ReacType == 'Unimol'):
             rate[j] = (kb * Temp[j] / h) * math.exp((Entropy[len(Temp) + j] - Entropy[j]) / R) * \
                 math.exp(-(data.MoleculeList[1].Energy - data.MoleculeList[0].Energy)
-                         * 627.5095 * 1.0e3 / R / Temp[j])
+                         * ha_to_kcal * 1.0e3 / R_kcal / Temp[j])
 
-            # Wigner correction (see doi:10.1103/PhysRev.40.749 and doi:10.1039/TF9595500001)
             kappa.append( wigner_correction(Temp[j], data.MoleculeList[1].imagFreq, data.scale ) )
-            # oFile.write('KAPPA: %f\n' % kappa)
 
             rate[j] *= kappa[j]
-            A[j, :] = mat([1.0, math.log(Temp[j]), -1.0 / R / Temp[j]])
+            A[j, :] = mat([1.0, math.log(Temp[j]), -1.0 / R_kcal / Temp[j]])
             y[j] = log(rate[j])
 
     b = linalg.inv(transpose(A) * A) * (transpose(A) * y)
@@ -162,13 +157,14 @@ def main():
                 '\n') #TODO what is this?
     oFile.write('r = A*T^n*exp(-Ea/R/T)' + '%12.2e' %
                 (exp(b[0])) + '%10.2f' % b[1] + '%12.2f' % (b[2] / 1.0e3) + '\n\n')
-    oFile.write('%12s' % 'Temperature' + '%12s' % 'Rate'+ '%12s' % 'FitRate'  + '%12s\n' % 'Kappa')
+
+    oFile.write('%12s' % 'Temp. (K)' + '%16s' % 'Rate (s^-1)'+ '%16s' % 'FitRate (s^-1)'  + '%12s\n' % 'Kappa')
 
     for j in range(len(Temp)):
         fitrate = exp(b[0]) * Temp[j]**float(b[1]) * \
-            exp(-b[2] / R / Temp[j])
-        oFile.write('%12.2f' % Temp[j] + '%12.2e' %
-                    rate[j] + '%12.2e' % fitrate + '%12.2f\n' % kappa[j])
+            exp(-b[2] / R_kcal / Temp[j])
+        oFile.write('%12.2f' % Temp[j] + '%16.2e' %
+                    rate[j] + '%16.2e' % fitrate + '%12.4f\n' % kappa[j])
     oFile.write('\n\n')
     oFile.close()
 

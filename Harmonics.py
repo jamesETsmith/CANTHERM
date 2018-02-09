@@ -40,7 +40,7 @@ class Harmonics:
             potentials.append(float(tokens[1]))
             if i == 3:
                 pot0 = potentials[0]
-            potentials[i - 3] = (potentials[i - 3] - pot0) * 627.5095
+            potentials[i - 3] = (potentials[i - 3] - pot0) * ha_to_kcal
             potgiven.append([float(i - 3) * 360 / nfit, potentials[i - 3]])
 
         # now fit the potentials

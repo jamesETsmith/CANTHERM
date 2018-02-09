@@ -26,5 +26,5 @@ summit.sh
 
 
 ### Examples Files ###
-examples/h-transf/RMG_compare/cantherm.log
-examples/h-transf/RMG_compare/chem.inp
+*cantherm.log
+*chem.inp
