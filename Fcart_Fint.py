@@ -102,7 +102,7 @@ num = Mass.size
 l = sort(l)
 for i in range(len(l) / 3):
     for j in range(3):
-        print(sqrt(l[3 * i + j] * (ha_to_kcal * 4180 / 6.023e23) *
+        print(sqrt(l[3 * i + j] * (ha_to_kcal * 4180 / N_avo) *
                    (1.88972e10**2) * (1 / 1.67e-27)) / 2 / math.pi / 3e10, '\t')
     print
 print

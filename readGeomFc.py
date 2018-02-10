@@ -339,6 +339,19 @@ def readFc(file):
     return Fc
 
 
+def read_freq(freq_file):
+    with open(freq_file, 'r') as f:
+        freq = []
+        for line in f:
+            # print(line)
+            if re.search('Frequencies --', line):
+                i = 0
+                for token in line.split():
+                    if i > 1: freq.append(float(token))
+                    i += 1
+        return freq
+
+
 def printNormalModes(l, v, num, Mass):
     for i in range(num):
         for k in range(3):

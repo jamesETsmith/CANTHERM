@@ -85,7 +85,7 @@ class Molecule:
                 for j in range(i, 3 * self.Mass.size):
                     self.Fc[i, j] = self.Fc[j, i]
 
-        elif tokens[0].upper() == "FREQ":
+        elif tokens[0].upper() == "FREQ" and len(tokens) == 1:
             line = readGeomFc.readMeaningfulLine(file)
             numFreq = int(line.split()[0])
             i = 0
@@ -97,12 +97,20 @@ class Molecule:
                     if float(j) < 0 and self.TS:
                         print("Imaginary Freq", j)
                         self.imagFreq = float(j)
-                        # self.imagFreq = -1 * sqrt(-1 * float(j) * (ha_to_kcal * 4180 / 6.023e23) * (1.88972e10**2) * (1 / 1.67e-27)) / 2 / math.pi / 3e10
                         continue
                     self.Freq.append(float(j))
 
             if len(self.Freq) > numFreq:
                 print('More frequencies than ', numFreq, ' are specified')
+
+
+        elif tokens[0].upper() == "FREQ" and tokens[1].upper() == "FILE":
+            freq_raw = readGeomFc.read_freq(tokens[2])
+            for freq in freq_raw:
+                if freq < 0 and self.TS:
+                    self.imagFreq = freq
+                else:
+                    self.Freq.append(freq)
 
         else:
             print('Frequency information cannot be read, check input file again')
@@ -304,12 +312,12 @@ class Molecule:
         num = Mass.size
         l = sort(l)
         if self.TS:
-            self.imagFreq = -1 * sqrt(-1 * l[0] * (ha_to_kcal * 4180 / 6.023e23) * (
+            self.imagFreq = -1 * sqrt(-1 * l[0] * (ha_to_kcal * 4180 / N_avo) * (
                 1.88972e10**2) * (1 / 1.67e-27)) / 2 / math.pi / 3e10
         l = l[6 + numRotors + int(self.TS):]
 
         for i in range(3 * Mass.size - 6 - numRotors - int(self.TS)):
-            self.Freq.append(sqrt(l[i] * (ha_to_kcal * 4180. / 6.023e23)
+            self.Freq.append(sqrt(l[i] * (ha_to_kcal * 4180. / N_avo)
                                   * (1.88972e10**2) * (1. / 1.67e-27)) / 2. / math.pi / 3.e10)
             self.Freq[-1]
 
@@ -320,13 +328,13 @@ class Molecule:
         l = sort(l)
         l = l[-numRotors:]
         for i in range(numRotors):
-            self.hindFreq.append(sqrt(l[i] * (ha_to_kcal * 4180 / 6.023e23)
+            self.hindFreq.append(sqrt(l[i] * (ha_to_kcal * 4180 / N_avo)
                                       * (1.88972e10**2) * (1 / 1.67e-27)) / 2 / math.pi / 3e10)
 
         # for i in range(len(l)/3+1):
         #    for j in range(3):
         #      if 3*i+j <len(l):
-        #        print '%10.3f'%(sqrt(l[3*i+j] * (ha_to_kcal*4180/6.023e23)  * (1.88972e10**2) * (1/1.67e-27) )/2/math.pi/3e10),
+        #        print '%10.3f'%(sqrt(l[3*i+j] * (ha_to_kcal*4180/N_avo)  * (1.88972e10**2) * (1/1.67e-27) )/2/math.pi/3e10),
         #    print
 
         # print
@@ -334,29 +342,43 @@ class Molecule:
 #*************************************************************************
     def print_heading(self, oFile, heading):
         l = len(heading) + 4
-        symb = '+'
+        symb = '='
         header = footer = symb * l
         mainline = '\n%s %s %s\n' % (symb, heading, symb)
-
         oFile.write(header + mainline + footer + "\n\n")
         return
 
 
 #*************************************************************************
 
-    def printContributions(self,oFile,Temp,ent,cp,dH):
+    def print_contributions(self,oFile,Temp,ent,cp,dH):
         # TODO Still need to check the units on these quantities
-        oFile.write('===========    =========    ==========    ========\n')
-        oFile.write(' Temp. (K)      S (J/K)      Cp (J/K)      dH (J) \n')
-        oFile.write('===========    =========    ==========    ========\n')
+        # horizontal_line = '===========    =========    ==========    ========\n'
+        horizontal_line = '='*12 + " "*3
+        horizontal_line *= 4
+        horizontal_line += '\n'
 
-        # iterate over temperatures
+        oFile.write(horizontal_line)
+        temp_string = 'Temp'
+        temp_units_string = 'K'
+        ent_string = 'S'
+        ent_units_string = 'kcal/(mol K)'
+        cp_string = 'Cp'
+        cp_units_string = 'kcal/(mol K)'
+        h_string = 'dH'
+        h_units_string = 'kcal/mol'
+
+        oFile.write('{:^12}   {:^12}   {:^12}   {:^12}\n'.format(temp_string,ent_string,cp_string,h_string))
+        oFile.write('{:^12}   {:^12}   {:^12}   {:^12}\n'.format(temp_units_string,ent_units_string,cp_units_string,h_units_string))
+        oFile.write(horizontal_line)
+
         for i in range(len(Temp)):
-            oFile.write('%11.2f' % Temp[i] + "    ")
-            oFile.write('%9.2f' % ent[i] + "    ")
-            oFile.write('%10.2f' % cp[i] + "    ")
-            oFile.write('%8.2f\n' % dH[i])
-        oFile.write('\n\n')
+            oFile.write('{:^12}'.format(Temp[i]) + "   ")
+            oFile.write('{:^12.2f}'.format(ent[i]) + "   ")
+            oFile.write('{:^12.2f}'.format(cp[i]) + "   ")
+            oFile.write('{:^12.2f}\n'.format(dH[i]))
+
+        oFile.write(horizontal_line + '\n')
         return
 
 #*************************************************************************
@@ -429,7 +451,7 @@ class Molecule:
             dH.append(5.0 / 2 * R_kcal* T / 1000.0)
             i = i + 1
 
-        self.printContributions(oFile,Temp,ent,cp,dH)
+        self.print_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH
 
@@ -460,7 +482,7 @@ class Molecule:
 
             for T in Temp:
                 s = -R_kcal* math.log(1.0 - math.exp(-h * freq * 3.0e10 / kb / T))
-                s = s + 6.023e23 * (h * freq * 3.0e10 / T) / \
+                s = s + N_avo * (h * freq * 3.0e10 / T) / \
                     (math.exp(h * freq * 3.0e10 / kb / T) - 1.0) / 4.18
                 # oFile.write('%12.2f'%s)
                 ent[i] = ent[i] + s
@@ -491,13 +513,13 @@ class Molecule:
             i = 0
             f = 'Freq: ' + '%2.0f' % (j + 1)
             for T in Temp:
-                h1 = 6.023e23 * (h * freq * 3.0e10) / \
-                    (math.exp(h * freq * 3.0e10 / kb / T) - 1.0) / 4180.0
+                h1 = N_avo * (h * freq * 3.0e10) / \
+                    (math.exp(h * freq * 3.0e10 / kb / T) - 1.0) / 4180.0 #kcal/mol
                 dH[i] = dH[i] + h1
                 i = i + 1
             j = j + 1
 
-        self.printContributions(oFile,Temp,ent,cp,dH)
+        self.print_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH, parti
 
@@ -571,13 +593,13 @@ class Molecule:
                     ddv = ddv - 1 * harm.Kcos[l] * (l + 1)**2
                 freq = 1.0 / 2.0 / pi * \
                     sqrt(ddv * 4180.0 / K[k] / 1.0e-20 /
-                         amu / 6.023e23) / 3.0e10
+                         amu / N_avo) / 3.0e10
                 # print freq, K[l], pi, ddv, K
 
-                Sq = Sq - R_kcal* math.log(1.0 - math.exp(-h * freq * 3.0e10 / kb / T)) + 6.023e23 * (
+                Sq = Sq - R_kcal* math.log(1.0 - math.exp(-h * freq * 3.0e10 / kb / T)) + N_avo * (
                     h * freq * 3.0e10 / T) / (math.exp(h * freq * 3.0e10 / kb / T) - 1.0) / 4.18
                 Scl = Scl + R_kcal+ R_kcal* math.log(kb * T / h / freq / 3.0e10)
-                Hq = Hq + 6.023e23 * (h * freq * 3.0e10) / \
+                Hq = Hq + N_avo * (h * freq * 3.0e10) / \
                     (math.exp(h * freq * 3.0e10 / kb / T) - 1.0) / 4.18
                 Hcl = Hcl + R_kcal* T
                 cpq = cpq + R_kcal* (h * freq * 3.0e10 / kb / T)**2 * math.exp(h * freq *
@@ -593,7 +615,7 @@ class Molecule:
             dH.append(H / 1e3)
             cp.append(Cp)
 
-        self.printContributions(oFile,Temp,ent,cp,dH)
+        self.print_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH
 
@@ -620,7 +642,7 @@ class Molecule:
             for l in range(5):
                 ddv = ddv - 1 * harm.Kcos[l] * (l + 1)**2
             freq = 1.0 / 2.0 / pi * \
-                sqrt(ddv * 4180.0 / K[irot] / 1.0e-20 / amu / 6.023e23) / 3.0e10
+                sqrt(ddv * 4180.0 / K[irot] / 1.0e-20 / amu / N_avo) / 3.0e10
 
         # calculate the energy levels for the hindered rotors
         E = self.calculateElevels()
@@ -647,7 +669,7 @@ class Molecule:
                 parti[iT] = parti[iT] * sum
 
 
-        self.printContributions(oFile,Temp,ent,cp,dH)
+        self.print_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH, parti
 
@@ -665,7 +687,7 @@ class Molecule:
             ksin = self.Harmonics[irot].Ksin
 
             for k in range(0, 2 * m + 1):
-                H[k, k] = 6.023e23 * h**2 * (k - m)**2 / 8.0 / math.pi**2 / \
+                H[k, k] = N_avo * h**2 * (k - m)**2 / 8.0 / math.pi**2 / \
                     K[irot] / amu / 1e-20 / 4180 + self.Harmonics[irot].A
 
                 for n in range(1, 6):
@@ -698,7 +720,7 @@ class Molecule:
             cp.append(3.0 * R_kcal/ 2.0)
             dH.append(3.0 * R_kcal* T / 2.0 / 1.0e3)
 
-        self.printContributions(oFile,Temp,ent,cp,dH)
+        self.print_contributions(oFile,Temp,ent,cp,dH)
         return ent, cp, dH
 
 

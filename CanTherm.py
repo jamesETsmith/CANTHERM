@@ -122,6 +122,7 @@ def main():
                 H += bonds * data.bondC[b]
                 b += 1
 
+        # TODO What's going on here        
         H += Thermal[i * len(Temp) + 0]
         print('%12.2f' % H + '%12.2f' % Entropy[i * len(Temp) + 0])
         for c in range(1, 8):
@@ -139,9 +140,9 @@ def main():
     kappa = []
     for j in range(len(Temp)):
         if (data.ReacType == 'Unimol'):
-            rate[j] = (kb * Temp[j] / h) * math.exp((Entropy[len(Temp) + j] - Entropy[j]) / R) * \
-                math.exp(-(data.MoleculeList[1].Energy - data.MoleculeList[0].Energy)
-                         * ha_to_kcal * 1.0e3 / R_kcal / Temp[j])
+            rate[j] = (kb * Temp[j] / h)
+            rate[j] *= math.exp((Entropy[len(Temp) + j] - Entropy[j]) / R)
+            rate[j] *= math.exp(-(data.MoleculeList[1].Energy - data.MoleculeList[0].Energy) * ha_to_kcal * 1.0e3 / R_kcal / Temp[j])
 
             kappa.append( wigner_correction(Temp[j], data.MoleculeList[1].imagFreq, data.scale ) )
 

@@ -36,7 +36,7 @@ for files in inputFiles:
             print(K[i])
             detD = detD * K[i]
         harmonics.write(str(float(detD)) + '\n')
-    harmonics.write(str((energy - energy_base) * 627.5095) + '\n')
+    harmonics.write(str((energy - energy_base) * ha_to_kcal) + '\n')
     if (energy < energy_base):
         print(files, " has lower energy")
         exit()
@@ -45,7 +45,7 @@ for files in inputFiles:
         for j in range(13):
             angle = (-60.0 + j * 120.0 / 12.0) * 2 * math.pi / 360.0
             fname = files[:-4] + '_rot' + str(i) + '_' + str(j) + '.log'
-            y[j] = (readGeomFc.readHFEnergy(fname) - energy) * 627.5095
+            y[j] = (readGeomFc.readHFEnergy(fname) - energy) * ha_to_kcal
             x[j, 0] = 1.0
             for k in range(5):
                 x[j, k + 1] = cos((k + 1) * angle)
