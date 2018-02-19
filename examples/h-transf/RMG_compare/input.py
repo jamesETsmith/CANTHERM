@@ -4,11 +4,11 @@
 modelChemistry = "CBS-QB3"
 frequencyScaleFactor = 0.99
 useHinderedRotors = False
-useBondCorrections = True
+useBondCorrections = False
 
 species('GS', 'GS.py')
 transitionState('TS', 'TS.py')
-thermo('GS', 'NASA')
+thermo('GS', 'wilhoit')
 # thermo('TS', 'NASA')
 
 

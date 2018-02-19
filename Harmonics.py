@@ -31,7 +31,7 @@ class Harmonics:
         angles = []
         potentials = []
         pot0 = 0.0
-        # first three lines are comments and last time is repeat
+        # first three lines are comments and last line is repeat
         nfit = len(lines) - 4
         potgiven = []
         for i in range(3, len(lines) - 1):
