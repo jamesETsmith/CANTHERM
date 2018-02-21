@@ -7,7 +7,7 @@ import scipy.linalg
 import geomUtility
 import os
 from constants import *
-
+import numpy as np
 
 class Molecule:
     # has other attributes
@@ -340,7 +340,7 @@ class Molecule:
         # print
 
 #*************************************************************************
-    def print_heading(self, oFile, heading):
+    def print_thermo_heading(self, oFile, heading):
         l = len(heading) + 4
         symb = '='
         header = footer = symb * l
@@ -351,7 +351,7 @@ class Molecule:
 
 #*************************************************************************
 
-    def print_contributions(self,oFile,Temp,ent,cp,dH):
+    def print_thermo_contributions(self,oFile,Temp,ent,cp,dH):
         # TODO Still need to check the units on these quantities
         # horizontal_line = '===========    =========    ==========    ========\n'
         horizontal_line = '='*12 + " "*3
@@ -362,9 +362,9 @@ class Molecule:
         temp_string = 'Temp'
         temp_units_string = 'K'
         ent_string = 'S'
-        ent_units_string = 'kcal/(mol K)'
+        ent_units_string = 'cal/(mol K)'
         cp_string = 'Cp'
-        cp_units_string = 'kcal/(mol K)'
+        cp_units_string = 'cal/(mol K)'
         h_string = 'dH'
         h_units_string = 'kcal/mol'
 
@@ -433,7 +433,7 @@ class Molecule:
         ent = []
         cp = []
         dH = []
-        self.print_heading( oFile, 'Translational Contributions')
+        self.print_thermo_heading( oFile, 'Translational Contributions')
 
         i = 0
         for T in Temp:
@@ -451,7 +451,7 @@ class Molecule:
             dH.append(5.0 / 2 * R_kcal* T / 1000.0)
             i = i + 1
 
-        self.print_contributions(oFile,Temp,ent,cp,dH)
+        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH
 
@@ -464,7 +464,7 @@ class Molecule:
         dH = []
         parti = []
 
-        self.print_heading(oFile,'Vibrational Contributions' )
+        self.print_thermo_heading(oFile,'Vibrational Contributions' )
         Freq = []
         for freq in self.Freq:
             Freq.append(freq * scale)
@@ -519,7 +519,7 @@ class Molecule:
                 i = i + 1
             j = j + 1
 
-        self.print_contributions(oFile,Temp,ent,cp,dH)
+        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH, parti
 
@@ -532,7 +532,7 @@ class Molecule:
         seed = 500
         numIter = 100000
 
-        self.print_heading(oFile,'Internal Rotational Contributions')
+        self.print_thermo_heading(oFile,'Internal Rotational Contributions')
 
         sigma = 1.0
         for rotor in self.rotors:
@@ -615,7 +615,7 @@ class Molecule:
             dH.append(H / 1e3)
             cp.append(Cp)
 
-        self.print_contributions(oFile,Temp,ent,cp,dH)
+        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH
 
@@ -629,7 +629,7 @@ class Molecule:
         dH = [0.0] * len(Temp)
         parti = [1.0] * len(Temp)
 
-        self.print_heading(oFile, 'Internal Rotation Contributions')
+        self.print_thermo_heading(oFile, 'Internal Rotation Contributions')
 
         sigma = 1.0
         for rotor in self.rotors:
@@ -669,7 +669,7 @@ class Molecule:
                 parti[iT] = parti[iT] * sum
 
 
-        self.print_contributions(oFile,Temp,ent,cp,dH)
+        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH, parti
 
@@ -708,7 +708,7 @@ class Molecule:
         cp = []
         dH = []
 
-        self.print_heading(oFile, "External Rotational Contributions")
+        self.print_thermo_heading(oFile, "External Rotational Contributions")
 
         for T in Temp:
             S = log(math.pi**0.5 * exp(1.5) / self.extSymm)
@@ -720,7 +720,7 @@ class Molecule:
             cp.append(3.0 * R_kcal/ 2.0)
             dH.append(3.0 * R_kcal* T / 2.0 / 1.0e3)
 
-        self.print_contributions(oFile,Temp,ent,cp,dH)
+        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
         return ent, cp, dH
 
 
@@ -755,3 +755,23 @@ class Molecule:
 # rotate coordinate axes to be parallel to principal axes
         (l, v) = linalg.eigh(I)
         self.Iext = l
+
+#**************************************************************************
+    def calculate_Q(self, T):
+        # Translational Contrib.
+        # TODO Assuming Unimolecular for now so it's technically per volume
+        q_tr = np.power((2 * pi * sum(self.Mass) * kb * T)/h**2, 3./2.)
+
+        # Vibrational Contrib.
+        q_vib = 1
+        for freq in self.Freq:
+            q_vib *= 1/( 1 - np.exp(-h * freq * c_in_cm/(kb * T)) )
+
+        # External Rotational Contrib.
+        # TODO Add symm. factor
+        sigma = 1
+        q_rot = np.power(pi * self.Iext[0] * self.Iext[1] * self.Iext[2], 0.5)/sigma
+        q_rot *= np.power(8 * pi**2 * kb * T / h**2, 3./2.)
+
+        # print(q_tr,q_vib,q_rot)
+        return q_tr * q_vib * q_rot

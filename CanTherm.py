@@ -70,35 +70,36 @@ def main():
         # translation
         (ent, cp, dh) = molecule.getTranslationThermo(oFile, data.Temp)
         for j in range(len(Temp)):
-            Entropy[i * len(Temp) + j] = Entropy[i * len(Temp) + j] + ent[j]
-            Cp[i * len(Temp) + j] = Cp[i * len(Temp) + j] + cp[j]
+            Entropy[i * len(Temp) + j] += ent[j]
+            Cp[i * len(Temp) + j] += cp[j]
 
         # vibrational
         (ent, cp, dh, q) = molecule.getVibrationalThermo(
             oFile, data.Temp, data.scale)
         for j in range(len(Temp)):
-            Entropy[i * len(Temp) + j] = Entropy[i * len(Temp) + j] + ent[j]
-            Cp[i * len(Temp) + j] = Cp[i * len(Temp) + j] + cp[j]
-            Thermal[i * len(Temp) + j] = Thermal[i * len(Temp) + j] + dh[j]
+            Entropy[i * len(Temp) + j] += ent[j]
+            Cp[i * len(Temp) + j] += cp[j]
+            Thermal[i * len(Temp) + j] += dh[j]
 
         # Internal rotational
         if molecule.numRotors != 0:
             (ent, cp, dh, q) = molecule.getIntRotationalThermo_Q(oFile, data.Temp)
             for j in range(len(Temp)):
-                Entropy[i * len(Temp) + j] = Entropy[i * len(Temp) + j] + ent[j]
-                Cp[i * len(Temp) + j] = Cp[i * len(Temp) + j] + cp[j]
-                Thermal[i * len(Temp) + j] = Thermal[i * len(Temp) + j] + dh[j]
+                Entropy[i * len(Temp) + j] += ent[j]
+                Cp[i * len(Temp) + j] += cp[j]
+                Thermal[i * len(Temp) + j] += dh[j]
 
         # External rotational
         (ent, cp, dh) = molecule.getExtRotationalThermo(oFile, data.Temp)
         for j in range(len(Temp)):
-            Entropy[i * len(Temp) + j] = Entropy[i * len(Temp) + j] + ent[j]
-            Cp[i * len(Temp) + j] = Cp[i * len(Temp) + j] + cp[j]
-            Thermal[i * len(Temp) + j] = Thermal[i * len(Temp) + j] + dh[j]
+            Entropy[i * len(Temp) + j] += ent[j]
+            Cp[i * len(Temp) + j] += cp[j]
+            Thermal[i * len(Temp) + j] += dh[j]
 
         for j in range(len(Temp)):
-            Entropy[i * len(Temp) + j] = Entropy[i * len(Temp) +
-                                                 j] + R_kcal * math.log(molecule.nelec)
+            Entropy[i * len(Temp) + j] += R_kcal * math.log(molecule.nelec)
+
+        if i == 0: molecule.print_thermo_contributions(oFile,Temp,Entropy,Cp,Thermal)
 
         H = molecule.Energy
         atoms = readGeomFc.getAtoms(molecule.Mass)
@@ -122,12 +123,14 @@ def main():
                 H += bonds * data.bondC[b]
                 b += 1
 
-        # TODO What's going on here        
+        # TODO What's going on here
         H += Thermal[i * len(Temp) + 0]
         print('%12.2f' % H + '%12.2f' % Entropy[i * len(Temp) + 0])
         for c in range(1, 8):
             print('%12.2f' % Cp[i * len(Temp) + c]),
         print('\n')
+
+
 
     if len(data.MoleculeList) == 1:
         return
@@ -167,6 +170,15 @@ def main():
         oFile.write('%12.2f' % Temp[j] + '%16.2e' %
                     rate[j] + '%16.2e' % fitrate + '%12.4f\n' % kappa[j])
     oFile.write('\n\n')
+
+    for i in range(len(Temp)):
+        T = Temp[i]
+        Q_react = data.MoleculeList[0].calculate_Q(T)
+        Q_TS = data.MoleculeList[1].calculate_Q(T)
+
+        k_test = (kb * T/ h) * (Q_TS/ Q_react) * math.exp(-(data.MoleculeList[1].Energy-data.MoleculeList[0].Energy) * ha_to_kcal * 1.e3 / R_kcal / T)
+        print("Test rate constant for T=%i \t %e" % (T,k_test*kappa[i]))
+
     oFile.close()
 
 
