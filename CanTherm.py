@@ -1,4 +1,20 @@
 #!/usr/bin/env python
+'''
+    Copyright (C) 2018, Sandeep Sharma and James E. T. Smith
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'''
 
 import sys
 import readGeomFc
@@ -7,11 +23,9 @@ import math
 from numpy import *
 from scipy import *
 from constants import *
+import kinetics
 
 
-def wigner_correction(T, freq, scale):
-    # see doi:10.1103/PhysRev.40.749 and doi:10.1039/TF9595500001
-    return (1.0 + 1.0 / 24.0 * (h * abs(freq) * scale * c_in_cm / (T * kb) )**2)
 
 class CanTherm:
     CalcType = ''
@@ -101,6 +115,7 @@ def main():
 
         if i == 0: molecule.print_thermo_contributions(oFile,Temp,Entropy,Cp,Thermal)
 
+        # TODO Test this block and make sure see if it's even executing
         H = molecule.Energy
         atoms = readGeomFc.getAtoms(molecule.Mass)
         atomsH = 0.0
@@ -135,49 +150,56 @@ def main():
     if len(data.MoleculeList) == 1:
         return
 
-    # fit the rate coefficient
-    A = matrix(zeros((len(Temp), 3), dtype=float))
-    y = matrix(zeros((len(Temp), 1), dtype=float))
-
-    rate = [0.0] * len(Temp)
-    kappa = []
-    for j in range(len(Temp)):
-        if (data.ReacType == 'Unimol'):
-            rate[j] = (kb * Temp[j] / h)
-            rate[j] *= math.exp((Entropy[len(Temp) + j] - Entropy[j]) / R)
-            rate[j] *= math.exp(-(data.MoleculeList[1].Energy - data.MoleculeList[0].Energy) * ha_to_kcal * 1.0e3 / R_kcal / Temp[j])
-
-            kappa.append( wigner_correction(Temp[j], data.MoleculeList[1].imagFreq, data.scale ) )
-
-            rate[j] *= kappa[j]
-            A[j, :] = mat([1.0, math.log(Temp[j]), -1.0 / R_kcal / Temp[j]])
-            y[j] = log(rate[j])
-
-    b = linalg.inv(transpose(A) * A) * (transpose(A) * y)
-
-    # Write the reaction rate data
-    oFile.write('\n\nRate Data\n')
-    oFile.write('r = A*(T/1000)^n*exp(-Ea/R/T)' + '%12.2e' % (exp(b[0]) * 1000.0**float(b[1])) + '%10.2f' % b[1] + '%12.2f' % (b[2] / 1.0e3) +
-                '\n') #TODO what is this?
-    oFile.write('r = A*T^n*exp(-Ea/R/T)' + '%12.2e' %
-                (exp(b[0])) + '%10.2f' % b[1] + '%12.2f' % (b[2] / 1.0e3) + '\n\n')
-
-    oFile.write('%12s' % 'Temp. (K)' + '%16s' % 'Rate (s^-1)'+ '%16s' % 'FitRate (s^-1)'  + '%12s\n' % 'Kappa')
-
-    for j in range(len(Temp)):
-        fitrate = exp(b[0]) * Temp[j]**float(b[1]) * \
-            exp(-b[2] / R_kcal / Temp[j])
-        oFile.write('%12.2f' % Temp[j] + '%16.2e' %
-                    rate[j] + '%16.2e' % fitrate + '%12.4f\n' % kappa[j])
-    oFile.write('\n\n')
-
+    rx = kinetics.Reaction(data.MoleculeList[0], data.MoleculeList[1], Temp, tunneling="Wigner")
+    # rx.calc_TST_rates()
+    # rx.fit_arrhenius()
+    rx.print_arrhenius()
     for i in range(len(Temp)):
-        T = Temp[i]
-        Q_react = data.MoleculeList[0].calculate_Q(T)
-        Q_TS = data.MoleculeList[1].calculate_Q(T)
+        print("%i\t%e"%(Temp[i],rx.rates[i]))
 
-        k_test = (kb * T/ h) * (Q_TS/ Q_react) * math.exp(-(data.MoleculeList[1].Energy-data.MoleculeList[0].Energy) * ha_to_kcal * 1.e3 / R_kcal / T)
-        print("Test rate constant for T=%i \t %e" % (T,k_test*kappa[i]))
+    # # fit the rate coefficient
+    # A = matrix(zeros((len(Temp), 3), dtype=float))
+    # y = matrix(zeros((len(Temp), 1), dtype=float))
+    #
+    # rate = [0.0] * len(Temp)
+    # kappa = []
+    # for j in range(len(Temp)):
+    #     if (data.ReacType == 'Unimol'):
+    #         rate[j] = (kb * Temp[j] / h)
+    #         rate[j] *= math.exp((Entropy[len(Temp) + j] - Entropy[j]) / R)
+    #         rate[j] *= math.exp(-(data.MoleculeList[1].Energy - data.MoleculeList[0].Energy) * ha_to_kcal * 1.0e3 / R_kcal / Temp[j])
+    #
+    #         # kappa.append( wigner_correction(Temp[j], data.MoleculeList[1].imagFreq, data.scale ) )
+    #         #
+    #         # rate[j] *= kappa[j]
+    #         A[j, :] = mat([1.0, math.log(Temp[j]), -1.0 / R_kcal / Temp[j]])
+    #         y[j] = log(rate[j])
+    #
+    # b = linalg.inv(transpose(A) * A) * (transpose(A) * y)
+    #
+    # # Write the reaction rate data
+    # oFile.write('\n\nRate Data\n')
+    # oFile.write('r = A*(T/1000)^n*exp(-Ea/R/T)' + '%12.2e' % (exp(b[0]) * 1000.0**float(b[1])) + '%10.2f' % b[1] + '%12.2f' % (b[2] / 1.0e3) +
+    #             '\n') #TODO what is this?
+    # oFile.write('r = A*T^n*exp(-Ea/R/T)' + '%12.2e' %
+    #             (exp(b[0])) + '%10.2f' % b[1] + '%12.2f' % (b[2] / 1.0e3) + '\n\n')
+    #
+    # oFile.write('%12s' % 'Temp. (K)' + '%16s' % 'Rate (s^-1)'+ '%16s' % 'FitRate (s^-1)'  + '%12s\n' % 'Kappa')
+    #
+    # for j in range(len(Temp)):
+    #     fitrate = exp(b[0]) * Temp[j]**float(b[1]) * \
+    #         exp(-b[2] / R_kcal / Temp[j])
+    #     oFile.write('%12.2f' % Temp[j] + '%16.2e' %
+    #                 rate[j] + '%16.2e' % fitrate + '%12.4f\n' % kappa[j])
+    # oFile.write('\n\n')
+
+    # for i in range(len(Temp)):
+    #     T = Temp[i]
+    #     Q_react = data.MoleculeList[0].calculate_Q(T)
+    #     Q_TS = data.MoleculeList[1].calculate_Q(T)
+    #
+    #     k_test = (kb * T/ h) * (Q_TS/ Q_react) * math.exp(-(data.MoleculeList[1].Energy-data.MoleculeList[0].Energy) * ha_to_kcal * 1.e3 / R_kcal / T)
+    #     print("Test rate constant for T=%i \t %e" % (T,k_test*kappa[i]))
 
     oFile.close()
 
