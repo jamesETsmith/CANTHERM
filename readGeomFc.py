@@ -383,15 +383,27 @@ def printNormalModes(l, v, num, Mass):
 
 
 def readEnergy(file, string):
-    com = file.read()
-    if string == 'cbsqb3':
-        Energy = re.search('CBS-QB3 \(0 K\)= ' +
-                           ' \s*([\-0-9.]+)', com).group(1)
-    elif string == 'g3':
-        Energy = re.search('G3\(0 K\)= ' + ' \s*([\-0-9.]+)', com).group(1)
+    tokens = file.split('.')
+    efile = open(file, 'r')
+    com = efile.read()
 
-    elif string == 'ub3lyp':
-        Energy = re.findall("E\(UB3LYP\) = " + "\s*([\-0-9.]+)", com)[-1]
+
+    # Gaussian File
+    if tokens[-1] == 'log':
+        if string == 'cbsqb3':
+            Energy = re.search('CBS-QB3 \(0 K\)= ' +
+                               ' \s*([\-0-9.]+)', com).group(1)
+        elif string == 'g3':
+            Energy = re.search('G3\(0 K\)= ' + ' \s*([\-0-9.]+)', com).group(1)
+
+        elif string == 'ub3lyp':
+            Energy = re.findall("E\(UB3LYP\) = " + "\s*([\-0-9.]+)", com)[-1]
+
+    # Molpro File
+    elif tokens[-1] == 'res':
+        if string == 'DF-LUCCSD(T)-F12':
+            Energy = re.search('DF-LUCCSD\(T\)-F12\/cc-pVTZ-F12 energy=' + \
+                                 ' \s*([\-0-9.]+)', com).group(1)
     return float(Energy)
 
 

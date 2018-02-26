@@ -18,6 +18,9 @@
 
 from numpy import *
 import pdb
+import re #, os, sys
+import matplotlib.pyplot as plt
+
 
 
 class Rotor:
@@ -29,18 +32,22 @@ class Rotor:
     level = 0
     r = mat('0.0 0.0 0.0')
     symm = 1.0
+    energies = []
 
-    def __init__(self, atomsList, pivot2, level, symm, Mass):
-        self.pivotAtom = atomsList[0]
-        self.atomsList = atomsList
-        self.pivot2 = pivot2
-        self.level = level
-        self.parent = 0
-        self.symm = symm
-        self.nonRotorList = []
-        for j in range(len(Mass)):
-            if (self.atomsList.count(j + 1) == 0):
-                self.nonRotorList.append(j + 1)
+    def __init__(self, log_file):
+        # self.pivotAtom = atomsList[0]
+        # self.atomsList = atomsList
+        # self.pivot2 = pivot2
+        # self.level = level
+        # self.parent = 0
+        # self.symm = symm
+        # self.nonRotorList = []
+        # for j in range(len(Mass)):
+        #     if (self.atomsList.count(j + 1) == 0):
+        #         self.nonRotorList.append(j + 1)
+        self.log_file =  log_file
+        self.read_scan_data(self.log_file)
+        self.plot_rotational_pes()
 
     def getAxes(self, geom, Mass):
         z = -(geom[self.pivot2 - 1, :] - geom[self.pivotAtom - 1, :])
@@ -114,3 +121,58 @@ class Rotor:
             Uy = Uy + Mass[i] * y[i]
 
         self.moments = [A, B, C, Ux]
+
+    def read_scan_data(self, file_name):
+        energy_offset = 0
+        energies = []
+
+        # Step through file one line at a time
+        with open(file_name, 'r') as f:
+            lines = f.readlines()
+            parsing_rotor = False #Boolean for parsing PES energy data
+
+
+            for line in lines:
+                # Get pivot atoms
+                if re.match('D\s+', line):
+                    print(line.split())
+
+                # Start of scan data
+                if re.match(' Summary of Optimized Potential Surface Scan', line):
+                    energy_offset = float(line.split()[7])
+                    parsing_rotor = True
+
+                # Energies
+                if parsing_rotor:
+                    if re.match('\s+Eigenvalues --', line):
+                        for e in line.split()[2:]:
+                            energies.append(float(e))
+
+                # End of scan data
+                if parsing_rotor and re.match(' GradGradGradGradGradGradGradGradGradGradGradGradGradGradGradGradGradGrad', line):
+                    parsing_rotor = False
+                    break
+
+        # TODO Clean this up and just use self.* throughout function
+        self.energies = energies
+        self.energy_offset = energy_offset
+
+    def write_potential_to_file(self, energy_offset, energies, file_name):
+        pot_file_header = "# 1-D Scan of Total Energy\n#\n# %8s\t%16s\n"%('Step Number','Energy (Ha)')
+        with open(file_name, 'w') as f:
+            f.write(pot_file_header)
+            i = 1;
+            for energy in energies:
+                f.write("%8i\t\t\t%16.8f\n"%(i,energy+energy_offset))
+                i += 1
+
+        return
+
+    def plot_rotational_pes(self):
+        '''
+        Plot the 1-D Rotor PES.
+        '''
+
+        plt.figure()
+        plt.plot(self.energies)
+        plt.show()

@@ -26,6 +26,7 @@ import geomUtility
 import os
 from constants import *
 import numpy as np
+import Rotor
 
 class Molecule:
     # has other attributes
@@ -65,7 +66,7 @@ class Molecule:
                 self.geom[j, 1] = double(tokens[4])
                 self.geom[j, 2] = double(tokens[5])
                 if (int(tokens[1]) == 6):
-                    self.Mass[j] = 12.0
+                    self.Mass[j] = 12.00000
                 if (int(tokens[1]) == 8):
                     self.Mass[j] = 15.99491
                 if (int(tokens[1]) == 1):
@@ -142,14 +143,15 @@ class Molecule:
             exit()
         if tokens[1].upper() == 'FILE':
             print('Reading energy from file: ', tokens[2])
-            energyFile = open(tokens[2], 'r')
             if (tokens[3].upper() == 'CBS-QB3'):
                 self.Etype = 'cbsqb3'
             elif (tokens[3].upper() == 'G3'):
                 self.Etype = 'g3'
             elif (tokens[3].upper() == 'UB3LYP'):
                 self.Etype = 'ub3lyp'
-            self.Energy = readGeomFc.readEnergy(energyFile, self.Etype)
+            elif (tokens[3].upper() == 'DF-LUCCSD(T)-F12'):
+                self.Etype= 'DF-LUCCSD(T)-F12'
+            self.Energy = readGeomFc.readEnergy(tokens[2], self.Etype)
             print(self.Energy, self.Etype)
         elif (len(tokens) == 3):
             self.Energy = float(tokens[1])
@@ -179,74 +181,98 @@ class Molecule:
         self.nelec = int(line.split()[1])
 
 # read rotor information
-        line = readGeomFc.readMeaningfulLine(file)
-        if (line.split()[0].upper() != 'ROTORS'):
-            print('Rotors keyword required')
-            exit()
-        self.numRotors = int(line.split()[1])
-        if self.numRotors == 0:
-            self.rotors = []
-            if (len(self.Freq) == 0):
-                # calculate frequencies from force constant
-                self.getFreqFromFc()
-            return
+#         line = readGeomFc.readMeaningfulLine(file)
+#         if (line.split()[0].upper() != 'ROTORS'):
+#             print('Rotors keyword required')
+#             exit()
+#         self.numRotors = int(line.split()[1])
+#         if self.numRotors == 0:
+#             self.rotors = []
+#             if (len(self.Freq) == 0):
+#                 # calculate frequencies from force constant
+#                 self.getFreqFromFc()
+#             return
+#
+#         rotorFile = line.split()[2]
+#         inertiaFile = open(rotorFile, 'r')
+#         # print self.Mass
+#         (self.rotors) = readGeomFc.readGeneralInertia(inertiaFile, self.Mass)
+#         if len(self.rotors) - 1 != self.numRotors:
+#             print("The number of rotors specified in file, ",
+#                   rotorFile, ' is different than, ', self.numRotors)
+#
+#         if (len(self.Freq) == 0):
+#             # calculate frequencies from force constant
+#             self.getFreqFromFc()
+#
+#
+# # read potential information for rotors
+#         line = readGeomFc.readMeaningfulLine(file)
+#         tokens = line.split()
+#         if tokens[0].upper() != 'POTENTIAL':
+#             print('No information for potential given')
+#             exit()
+#
+#         if tokens[1].upper() == 'SEPARABLE':
+#             if tokens[2].upper() == 'FILES':
+#                 line = readGeomFc.readMeaningfulLine(file)
+#                 tokens = line.split()
+#                 if len(tokens) != self.numRotors:
+#                     print('give a separate potential file for each rotor')
+#                 for files in tokens:
+#                     Kcos = []
+#                     Ksin = []
+#                     harmonic = Harmonics(5, Kcos, Ksin)
+#                     harmonic.fitPotential(files)
+#                     self.Harmonics.append(harmonic)
+#
+#             elif tokens[2].upper() == 'HARMONIC':
+#                 for i in range(self.numRotors):
+#                     line = readGeomFc.readMeaningfulLine(file)
+#                     numFit = int(line.split()[0])
+#                     Ksin = []
+#                     Kcos = []
+#                     for i in range(numFit):
+#                         line = readGeomFc.readMeaningfulLine(file)
+#                         tokens = line.split()
+#                         Kcos.append(tokens[0])
+#                         Ksin.append(tokens[0])
+#                     harmonic = Harmonics(numFit, Kcos, Ksin)
+#                     self.Harmonics.append(harmonic)
+#
+#         elif tokens[1].upper() == 'NONSEPARABLE':
+#             line = readGeomFc.readMeaningfulLine(file)
+#             self.potentialFile = line.split()[0]
 
-        rotorFile = line.split()[2]
-        inertiaFile = open(rotorFile, 'r')
-        # print self.Mass
-        (self.rotors) = readGeomFc.readGeneralInertia(inertiaFile, self.Mass)
-        if len(self.rotors) - 1 != self.numRotors:
-            print("The number of rotors specified in file, ",
-                  rotorFile, ' is different than, ', self.numRotors)
-
-        if (len(self.Freq) == 0):
-            # calculate frequencies from force constant
-            self.getFreqFromFc()
-
-
-# read potential information for rotors
+        # Rotors
         line = readGeomFc.readMeaningfulLine(file)
         tokens = line.split()
-        if tokens[0].upper() != 'POTENTIAL':
-            print('No information for potential given')
+
+        if tokens[0].upper() != 'ROTORS':
+            print('No information for the potential given.\nExiting...')
             exit()
 
-        if tokens[1].upper() == 'SEPARABLE':
-            if tokens[2].upper() == 'FILES':
-                line = readGeomFc.readMeaningfulLine(file)
-                tokens = line.split()
-                if len(tokens) != self.numRotors:
-                    print('give a separate potential file for each rotor')
-                for files in tokens:
-                    Kcos = []
-                    Ksin = []
-                    harmonic = Harmonics(5, Kcos, Ksin)
-                    harmonic.fitPotential(files)
-                    self.Harmonics.append(harmonic)
+        self.numRotors = int(line.split()[1])
 
-            elif tokens[2].upper() == 'HARMONIC':
-                for i in range(self.numRotors):
-                    line = readGeomFc.readMeaningfulLine(file)
-                    numFit = int(line.split()[0])
-                    Ksin = []
-                    Kcos = []
-                    for i in range(numFit):
-                        line = readGeomFc.readMeaningfulLine(file)
-                        tokens = line.split()
-                        Kcos.append(tokens[0])
-                        Ksin.append(tokens[0])
-                    harmonic = Harmonics(numFit, Kcos, Ksin)
-                    self.Harmonics.append(harmonic)
-
-        elif tokens[1].upper() == 'NONSEPARABLE':
+        if self.numRotors > 0:
             line = readGeomFc.readMeaningfulLine(file)
-            self.potentialFile = line.split()[0]
+            tokens = line.split()
+
+            if len(tokens) != self.numRotors:
+                print('Number of files doesn\'t match the number of rotors.')
+                print('Exiting...')
+                exit()
+
+            self.rotors = []
+            for i in range(self.numRotors):
+                rotori = Rotor.Rotor(tokens[i])
+
 
 # read the bonds
-        line = readGeomFc.readMeaningfulLine(file)
-        tokens = line.split()
-        for bond in tokens:
-            self.bonds.append(float(bond))
+        # line = readGeomFc.readMeaningfulLine(file)
+        # tokens = line.split()
+        # for bond in tokens:
+        #     self.bonds.append(float(bond))
 
 #*************************************************************************
 

@@ -12,9 +12,8 @@ FREQ FILE gs.log
 ENERGY FILE gs.log CBS-QB3
 EXTSYM 1
 NELEC 2
-ROTORS 3 inertia.dat
-POTENTIAL separable files
-1.txt 2.txt 3.txt
+ROTORS 3
+hydroxyl_rotor/hydroxyl_rotor.log methyl_rotor/methyl_rotor.log oxy_rotor/oxy_rotor.log
 
 Mol 2
 Nonlinear
