@@ -47,6 +47,9 @@ class CanTherm:
     atomEccsdtf12 = {'H': -0.499811124128, 'N': -54.526406291655,
         'O': -74.995458316117, 'C': -37.788203485235, 'S': -397.663040369707}
 
+    # CCSD(T)-F12/cc-pVTZ-F12
+    atomEccsdt_f12_tz = {'H':-0.499946213243, 'N':-54.53000909621, 'O':-75.004127673424, 'C':-37.789862146471, 'S':-397.675447487865}
+
     # UB3LYP/cc-pVDZ
     atomEub3lyp = {'H': -0.501257936920, 'N': -54.4835759575, 'O':-75.0684969223,
         'C':-37.8519749084, 'S':-398.062555689 }
@@ -125,6 +128,8 @@ def main():
             atomE = data.atomEg3
         if molecule.Etype == 'ccsdtf12':
             atomE = data.atomEccsdtf12
+        if molecule.Etype == 'DF-LUCCSD(T)-F12':
+            atomE = data.atomEccsdt_f12_tz
         if molecule.Etype == 'ub3lyp':
             atomE = data.atomEub3lyp
         for atom in atoms:
@@ -152,8 +157,8 @@ def main():
 
     rx = kinetics.Reaction(data.MoleculeList[0], data.MoleculeList[1], Temp, tunneling="Wigner")
     # rx.calc_TST_rates()
-    # rx.fit_arrhenius()
-    rx.print_arrhenius()
+    rx.fit_arrhenius()
+    # rx.print_arrhenius()
     for i in range(len(Temp)):
         print("%i\t%e"%(Temp[i],rx.rates[i]))
 

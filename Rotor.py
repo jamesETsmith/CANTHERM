@@ -20,8 +20,9 @@ from numpy import *
 import pdb
 import re #, os, sys
 import matplotlib.pyplot as plt
-
-
+import numpy as np
+from functools import reduce
+la = np.linalg
 
 class Rotor:
 
@@ -33,6 +34,7 @@ class Rotor:
     r = mat('0.0 0.0 0.0')
     symm = 1.0
     energies = []
+    pot_coeffs = np.array([])
 
     def __init__(self, log_file):
         # self.pivotAtom = atomsList[0]
@@ -168,11 +170,80 @@ class Rotor:
 
         return
 
-    def plot_rotational_pes(self):
+    def plot_rotational_pes(self, fitted=True, n_fit=100):
         '''
         Plot the 1-D Rotor PES.
         '''
 
+        if fitted:
+            th = np.linspace(0, 2*np.pi, num=n_fit)
+            v_fit = self.calculate_potential(th=th)
+
         plt.figure()
-        plt.plot(self.energies)
+        plt.plot(np.linspace(0,2*np.pi, num=len(self.energies)),
+                 np.array(self.energies), # - np.min(self.energies),# + self.energy_offset,
+                 label="Calculated")
+        plt.plot(th, v_fit, label="Fit")
+        plt.legend()
         plt.show()
+
+
+    def fit_potential(self, a=None, e=None, n_term=23):
+        '''
+        A is the matrix of fourier terms. E are the energies. N_term is the
+        number of Fourier terms to include in the expansion.
+        '''
+
+        if e == None:
+            e = np.array(self.energies) #- np.min(self.energies) # self.energy_offset
+            e = e[:-1] # Last element is a duplicate.
+
+        # e = np.sin(np.linspace(0,2*np.pi,num=24))/100  + np.sin(3 * np.linspace(0,2*np.pi,num=24))/100
+        # self.energies = e
+
+        if a == None:
+            a = np.zeros( (e.shape[0], n_term) )
+            th = np.linspace(0,2*np.pi,e.shape[0])
+
+            for r in range(a.shape[0]):
+                for c in range(a.shape[1]):
+                    # First coefficient (no sinusoidal function)
+                    if c == 0:
+                        a[r,c] = 1
+                    # a coeffs
+                    elif c%2 == 0 and c > 0:
+                    #    a[r,c] = 1 - np.cos(k[c]/2 * th[r])
+                        a[r,c] = np.cos(int((c + 1)/2) * th[r])
+                    # b coeffs
+                    else:
+                        a[r,c] = np.sin(int((c + 1)/2) * th[r])
+
+        self.pot_coeffs = reduce(np.dot, (la.inv(np.dot(a.T, a)), a.T, e))
+        # print(self.pot_coeffs) # TODO
+        return
+
+    def calculate_potential(self, th=None, n_fit=1000 ):
+        '''
+        Calculate the fitted potential using the pot_coeffs array.
+        '''
+
+        if th is None:
+            th = np.linspace(0, 2*np.pi, num=n_fit)
+
+        v_fit = np.zeros(th.shape[0])
+
+        if self.pot_coeffs.shape[0] == 0: self.fit_potential()
+
+        for i in range(th.shape[0]):
+          for j in range(self.pot_coeffs.shape[0]):
+              if j == 0:
+                  v_fit[i] += self.pot_coeffs[j] * 1.0
+                  continue
+              elif j%2 == 0 and j > 0:
+                  v_fit[i] += self.pot_coeffs[j] * \
+                      np.cos( int((j + 1)/2) * th[i])
+              elif j%2 == 1:
+                  v_fit[i] += self.pot_coeffs[j] * \
+                      np.sin( int((j + 1)/2) * th[i])
+
+        return v_fit
