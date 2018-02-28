@@ -79,7 +79,7 @@ def main():
         molecule = data.MoleculeList[i]
         oFile.write('Molecule ' + str(i + 1) + ':\n')
         oFile.write('-----------\n\n')
-        molecule.printData(oFile)
+        # molecule.printData(oFile)
 
         oFile.write('\nThermodynamic Data\n')
 

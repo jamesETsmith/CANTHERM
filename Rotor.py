@@ -24,8 +24,47 @@ import numpy as np
 from functools import reduce
 la = np.linalg
 
-class Rotor:
+import readGeomFc
 
+def er_rotation(v1, v2):
+    '''
+    Euler-Rodrigues rotation of vector 1 to align with vector 2.
+
+    Arguments:
+        v1: vector that will be rotated
+        v2: vector that we will rotate to (i.e. we will make v1 || to v2)
+
+    Returns:
+        r: 3x3 rotation matrix
+    '''
+
+    # Vector we will rotate about
+    k = np.cross(v1,v2)
+    # Angle we need to rotate
+    th = np.arccos(np.dot(v1,v2)/(la.norm(v1)*la.norm(v2)))
+
+    # Euler/Rodrigues params
+    # See https://en.wikipedia.org/wiki/Euler%E2%80%93Rodrigues_formula
+    a = np.cos(th/2)
+    b = k[0] * np.sin(th/2)
+    c = k[1] * np.sin(th/2)
+    d = k[2] * np.sin(th/2)
+
+    r = np.zeros((3,3))
+    r[0,0]=a**2 + b**2 - c**2 - d**2; r[0,1]=2*(b*c-a*d); r[0,2]=2*(b*d+a*c);
+    r[1,0]=2*(b*c+a*d); r[1,1]=a**2 + c**2 - b**2 - d**2; r[1,2]=2*(c*d-a*b);
+    r[2,0]=2*(b*d-a*c); r[2,1]=2*(c*d+a*b); r[2,2]=a**2 + d**2 - b**2 - c**2;
+
+    return r
+
+class Rotor:
+    '''
+    Class for the hindered rotors.
+
+       .. note:
+
+           Make sure the atoms are in the same order as the original energy
+    '''
     pivotAtom = 0
     atomsList = []
     pivot2 = 0
@@ -36,7 +75,7 @@ class Rotor:
     energies = []
     pot_coeffs = np.array([])
 
-    def __init__(self, log_file):
+    def __init__(self, log_file, geom, masses, bonds):
         # self.pivotAtom = atomsList[0]
         # self.atomsList = atomsList
         # self.pivot2 = pivot2
@@ -47,47 +86,127 @@ class Rotor:
         # for j in range(len(Mass)):
         #     if (self.atomsList.count(j + 1) == 0):
         #         self.nonRotorList.append(j + 1)
+
+        self.geom = geom # list
+        self.masses = masses  # 2D list index 1 is atom, index 2 is x/y/z
+        self.natom = len(self.masses)
+        self.bonds = bonds
+
         self.log_file =  log_file
         self.read_scan_data(self.log_file)
-        self.plot_rotational_pes()
+        self.fit_potential()
+        # self.plot()
+        self.calc_axis()
+        # self.plot_rotational_pes()
 
-    def getAxes(self, geom, Mass):
-        z = -(geom[self.pivot2 - 1, :] - geom[self.pivotAtom - 1, :])
-        z = z / linalg.norm(z)
+    # def getAxes(self, geom, Mass):
+    #     z = -(geom[self.pivot2 - 1, :] - geom[self.pivotAtom - 1, :])
+    #     z = z / linalg.norm(z)
+    #
+    #     cm = matrix('0.0 0.0 0.0')
+    #
+    #     M = 0.0
+    #     for i in self.atomsList:
+    #         cm = cm + Mass[i - 1] * geom[i - 1, :]
+    #         M = M + Mass[i - 1]
+    #     cm = cm / M
+    #
+    #     xtemp = (cm - geom[self.pivotAtom - 1, :])
+    #     xtemp = xtemp / linalg.norm(xtemp)
+    #
+    #     diff = xtemp - z
+    #     different = False
+    #
+    #     for i in range(3):
+    #         if not(-1e-10 < (xtemp[0, i] - z[0, i]) < 1e-10):
+    #             different = True
+    #             break
+    #
+    #     if (different):
+    #         x = xtemp - (z * transpose(xtemp)) * z
+    #         x = x / linalg.norm(x)
+    #         y = matrix(cross(z, x))
+    #     else:
+    #         xtemp = z + mat(' 0.0 0.0 1.0')
+    #         x = xtemp - (z * transpose(xtemp)) * z
+    #         x = x / linalg.norm(x)
+    #         y = matrix(cross(z, x))
+    #
+    #     self.dircos = matrix(zeros((3, 3), dtype=float))
+    #     self.dircos[0, :] = x
+    #     self.dircos[1, :] = y
+    #     self.dircos[2, :] = z
 
-        cm = matrix('0.0 0.0 0.0')
+    def calc_axis(self):
+        '''
+        Calculates the axis of hindered rotation and assign mocules to their
+        respective top (i.e. which side of the bond they are on).
+        '''
 
-        M = 0.0
-        for i in self.atomsList:
-            cm = cm + Mass[i - 1] * geom[i - 1, :]
-            M = M + Mass[i - 1]
-        cm = cm / M
+        geom = np.array(self.geom)
+        masses = np.array(self.masses)
+        natom = self.natom
 
-        xtemp = (cm - geom[self.pivotAtom - 1, :])
-        xtemp = xtemp / linalg.norm(xtemp)
+        # Option 1: Along the axis of the dihedral bond
+        # Shift pivot 2 to the origin
+        p2 = np.array(geom[self.pivot2,:])
+        geom[:] -= p2
+        p1 = np.array(geom[self.pivot1,:]) # After translation
 
-        diff = xtemp - z
-        different = False
+        rot_mat = er_rotation(p1,np.array([0,0,1])) # Rotate to z-axis
+        self.geom = np.dot(geom,rot_mat.T) #np.einsum('ij,kj->ik', rot_mat, geom)
+        # self.plot() # TODO
 
-        for i in range(3):
-            if not(-1e-10 < (xtemp[0, i] - z[0, i]) < 1e-10):
-                different = True
-                break
+        # Assign the atoms to atomlist for each top
+        self.alist1 = [] # closest to pivot 1
+        self.alist2 = [] # closest to pivot 2
 
-        if (different):
-            x = xtemp - (z * transpose(xtemp)) * z
-            x = x / linalg.norm(x)
-            y = matrix(cross(z, x))
-        else:
-            xtemp = z + mat(' 0.0 0.0 1.0')
-            x = xtemp - (z * transpose(xtemp)) * z
-            x = x / linalg.norm(x)
-            y = matrix(cross(z, x))
+        sets = [ [i] for i in range(natom) ]
+        # print("SETS0", sets) # TODO
+        idx = self.bonds.index([min(self.pivot1,self.pivot2),
+                                max(self.pivot1,self.pivot2)])
+        del self.bonds[idx]
 
-        self.dircos = matrix(zeros((3, 3), dtype=float))
-        self.dircos[0, :] = x
-        self.dircos[1, :] = y
-        self.dircos[2, :] = z
+        for b in self.bonds:
+            idx0 = None
+            idx1 = None
+
+            for i in range(len(sets)):
+                if b[0] in sets[i]:
+                    idx0 = i
+                if b[1] in sets[i]:
+                    idx1 = i
+
+            # Already in the same set
+            if idx1 == idx0:
+                continue
+
+            # Combine the sets and clean up
+            else:
+                sets[idx0] += sets[idx1]
+                del sets[idx1]
+
+        # print("SETS", sets) # TODO
+        self.bonds.insert( idx, [min(self.pivot1,self.pivot2),
+                                max(self.pivot1,self.pivot2)])
+
+        # Collect the list of atoms in each top
+        p1_idx = None
+        p2_idx = None
+        for i in range(len(sets)):
+            if self.pivot1 in sets[i]:
+                p1_idx = i
+            if self.pivot2 in sets[i]:
+                p2_idx = i
+
+        self.alist1 = sets[p1_idx]
+        self.alist2 = sets[p2_idx]
+        self.alist1.remove(self.pivot1)
+        self.alist2.remove(self.pivot2)
+
+        print("ALIST1", self.alist1, self.pivot1, len(self.alist1))
+        print("ALIST2", self.alist2, self.pivot2)
+        return
 
     def getMoments(self, geom, Mass):
         geomTemp = geom.copy()
@@ -131,13 +250,20 @@ class Rotor:
         # Step through file one line at a time
         with open(file_name, 'r') as f:
             lines = f.readlines()
+
             parsing_rotor = False #Boolean for parsing PES energy data
 
-
             for line in lines:
+
                 # Get pivot atoms
-                if re.match('D\s+', line):
-                    print(line.split())
+                if re.search('D\s+\d', line):
+                    print(line.split()) # TODO
+                    splt = line.split()
+                    self.dihedral = np.array([int(splt[1]), int(splt[2]),
+                                              int(splt[3]), int(splt[4])]) - 1
+                    self.pivot1 = self.dihedral[1]
+                    self.pivot2 = self.dihedral[2]
+                    self.scan_rate = float(splt[-1]) # In degrees
 
                 # Start of scan data
                 if re.match(' Summary of Optimized Potential Surface Scan', line):
@@ -158,6 +284,67 @@ class Rotor:
         # TODO Clean this up and just use self.* throughout function
         self.energies = energies
         self.energy_offset = energy_offset
+        return
+
+
+    def plot(self):
+        '''
+        Plot the rotors and highlight them.
+
+        '''
+
+        from mpl_toolkits.mplot3d import axes3d
+
+        geom = self.geom
+        masses = self.masses
+
+        # Figure
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Add Atoms
+        coords = np.array(geom)
+        # print(coords[:,0]) #TODO
+
+        for i in range(len(masses)):
+            if masses[i] == 12.0: # Carbon grey
+                ax.scatter(coords[i,0], coords[i,1], coords[i,2], c='#C8C8C8',
+                    s=300, depthshade=False)
+            elif masses[i] == 15.99491: # Oxygen red
+                ax.scatter(coords[i,0], coords[i,1], coords[i,2], c='#F00000',
+                    s=300, depthshade=False)
+            elif masses[i] == 1.00783: # Hydrogen white
+                ax.scatter(coords[i,0], coords[i,1], coords[i,2], c='#FFFFFF',
+                    s=300, depthshade=False)
+            elif masses[i] == 14.0031: # Nitrogen light blue
+                ax.scatter(coords[i,0], coords[i,1], coords[i,2], c='#8F8FFF',
+                    s=300, depthshade=False)
+            elif masses[i] == 34.96885: # Chlorine green
+                ax.scatter(coords[i,0], coords[i,1], coords[i,2], c='#00FF00',
+                    s=300, depthshade=False)
+            elif masses[i] == 31.97207: # Sulphur yellow
+                ax.scatter(coords[i,0], coords[i,1], coords[i,2], c='#FFC832',
+                    s=300, depthshade=False)
+            elif masses[i] == 18.99840: # Fluorine seafoam green
+                ax.scatter(coords[i,0], coords[i,1], coords[i,2], c='#0fff97',
+                    s=300, depthshade=False)
+
+        ax.scatter(coords[self.pivot1,0], coords[self.pivot1,1],
+                   coords[self.pivot1,2], c='#6f6f6f', s=300, depthshade=False,
+                   marker = '^')
+
+        ax.scatter(coords[self.pivot2,0], coords[self.pivot2,1],
+                   coords[self.pivot2,2], c='#6f6f6f', s=300, depthshade=False,
+                   marker = '^')
+
+        ax.set_xlabel('X axis')
+        ax.set_ylabel('Y axis')
+        ax.set_zlabel('Z axis')
+
+        plt.show()
+
+        return
+
 
     def write_potential_to_file(self, energy_offset, energies, file_name):
         pot_file_header = "# 1-D Scan of Total Energy\n#\n# %8s\t%16s\n"%('Step Number','Energy (Ha)')

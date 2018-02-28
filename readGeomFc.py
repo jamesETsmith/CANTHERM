@@ -209,7 +209,27 @@ def readGeom(file):
             Mass[j] = 31.97207
         if (int(tokens[1]) == 9):
             Mass[j] = 18.99840
-    return geom, Mass
+
+    # Read the bonds
+    bond_ind = lines.index('                           !    Initial Parameters    !\n')
+    bond_ind -= 5 # Skip heading
+    reading_bonds = True
+    bonds = []
+    while reading_bonds:
+        if re.search(' ! R\d', lines[bond_ind]):
+            s = re.search('\(([^)]+)', lines[bond_ind]).group(1).split(',')
+            s = [int(s[0])-1, int(s[1])-1]
+            bonds.append(s)
+            # print(s) # TODO
+        if re.search(' ! A\d', lines[bond_ind]):
+            reading_bonds = False
+            break
+        if re.search(' ! D\d', lines[bond_ind]):
+            reading_bonds = False
+            break
+        bond_ind -= 1
+    # exit(0) # TODO
+    return geom, Mass, bonds
 
 
 def readGeomFc(file):

@@ -84,7 +84,7 @@ class Molecule:
         if tokens[1].upper() == 'FILE':
             print("reading Geometry from the file: ", tokens[2])
             geomFile = open(tokens[2], 'r')
-            (self.geom, self.Mass) = readGeomFc.readGeom(geomFile)
+            (self.geom, self.Mass, self.bonds) = readGeomFc.readGeom(geomFile)
             # print self.geom
         else:
             print(
@@ -265,7 +265,7 @@ class Molecule:
 
             self.rotors = []
             for i in range(self.numRotors):
-                rotori = Rotor.Rotor(tokens[i])
+                rotori = Rotor.Rotor(tokens[i], self.geom, self.Mass, self.bonds)
 
 
 # read the bonds
@@ -428,6 +428,9 @@ class Molecule:
 #*************************************************************************
 
     def printData(self, oFile):
+        '''
+        Deprecated
+        '''
         geom = self.geom
         Mass = self.Mass
         oFile.write('Geometry:\n')
@@ -668,6 +671,11 @@ class Molecule:
 #*************************************************************************
 
     def getIntRotationalThermo_Q(self, oFile, Temp):
+        '''
+        Deprecated
+
+        Sandeep's old main function for this.
+        '''
         ent = [0.0] * len(Temp)
         cp = [0.0] * len(Temp)
         dH = [0.0] * len(Temp)
