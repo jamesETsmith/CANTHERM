@@ -62,7 +62,8 @@ class Reaction:
                 self.rates[i] *= kappa
 
             # print("Test rate constant for T=%i \t %e" % (T,k_test*kappa[i]))
-        return
+
+
 
     def fit_arrhenius(self):
         '''
@@ -93,7 +94,6 @@ class Reaction:
         self.arrhenius_coeff = np.exp(x[0])
         self.arrhenius_exp = x[1]
         self.activation_energy = - x[-1] * R
-        return
 
     def print_arrhenius(self):
         '''

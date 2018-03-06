@@ -34,6 +34,7 @@ class Molecule:
     # potentialFile, Iext, ebase, bonds
 
     def __init__(self, file, isTS):
+        self.rotors = []
         self.Freq = []
         self.Harmonics = []
         self.hindFreq = []
@@ -255,19 +256,50 @@ class Molecule:
         self.numRotors = int(line.split()[1])
 
         if self.numRotors > 0:
+            # Read the file names for the rotor logs
             line = readGeomFc.readMeaningfulLine(file)
-            tokens = line.split()
+            file_tokens = line.split()
 
-            if len(tokens) != self.numRotors:
+            if len(file_tokens) != self.numRotors:
                 print('Number of files doesn\'t match the number of rotors.')
                 print('Exiting...')
                 exit()
 
+            # Read the symmetry factors for the internal rotors
+            line = readGeomFc.readMeaningfulLine(file)
+            sym_tokens = line.split()
+            if sym_tokens[0].upper() == 'ROTORSYM' and \
+                len(sym_tokens) - 1 != self.numRotors:
+                print('Number of symmetry factors doesn\'t match the number of rotors.')
+                print('Exiting...')
+                exit()
+
+            # Create rotor object for each hindered rotor
             self.rotors = []
             for i in range(self.numRotors):
-                rotori = Rotor.Rotor(tokens[i], self.geom, self.Mass, self.bonds)
+                self.rotors.append(Rotor.Rotor(file_tokens[i], self.geom,
+                                                self.Mass, self.bonds,
+                                                int(sym_tokens[i+1]) ))
 
+            # Read the hindered rotor "frequency"
+            # This will be removed from the frequencies list.
+            line = readGeomFc.readMeaningfulLine(file)
+            tokens = line.split()
 
+            if tokens[0].upper() == 'ROTORFREQ' and \
+                len(tokens) - 1 != self.numRotors:
+                print('Number of symmetry factors doesn\'t match the number of rotors.')
+                print('Exiting...')
+                exit()
+
+            for i in range(self.numRotors):
+                print("Removing hindered rotor frequency %s cm^-1 from the list of vibrational frequencies." % tokens[i+1])
+                rm_idx = self.Freq.index(float(tokens[i+1]))
+                del self.Freq[rm_idx]
+
+            # print(self.Freq) # TODO
+
+            # exit(0)
 # read the bonds
         # line = readGeomFc.readMeaningfulLine(file)
         # tokens = line.split()
@@ -830,5 +862,19 @@ class Molecule:
         q_rot = np.power(pi * self.Iext[0] * self.Iext[1] * self.Iext[2], 0.5)/sigma
         q_rot *= np.power(8 * pi**2 * kb * T / h**2, 3./2.)
 
-        # print(q_tr,q_vib,q_rot)
+        # Internal Rotational Contrib.
+        q_ir = 1
+        s_ir = 0
+        h_ir = 0
+        cp_ir = 0
+
+        for rotor in self.rotors:
+            q_ir_i, s_ir_i, h_ir_i, cp_ir_i = rotor.calculate_thermo(T)
+            q_ir *= q_ir_i
+            s_ir += s_ir_i
+            h_ir += s_ir_i
+            cp_ir += s_ir_i
+
+        # print('Temp = %i \t Q_ir: %e\t S_ir: %e\t H_ir: %e\t Cp_ir: %e' % (T, q_ir, s_ir, h_ir, cp_ir))
+        # print( "Tr: %e\t Vib: %e\t Rot: %e\t IR:%e" % (q_tr, q_vib, q_rot, q_ir) )
         return q_tr * q_vib * q_rot

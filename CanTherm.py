@@ -99,12 +99,12 @@ def main():
             Thermal[i * len(Temp) + j] += dh[j]
 
         # Internal rotational
-        if molecule.numRotors != 0:
-            (ent, cp, dh, q) = molecule.getIntRotationalThermo_Q(oFile, data.Temp)
-            for j in range(len(Temp)):
-                Entropy[i * len(Temp) + j] += ent[j]
-                Cp[i * len(Temp) + j] += cp[j]
-                Thermal[i * len(Temp) + j] += dh[j]
+        # if molecule.numRotors != 0:
+        #     (ent, cp, dh, q) = molecule.getIntRotationalThermo_Q(oFile, data.Temp)
+        #     for j in range(len(Temp)):
+        #         Entropy[i * len(Temp) + j] += ent[j]
+        #         Cp[i * len(Temp) + j] += cp[j]
+        #         Thermal[i * len(Temp) + j] += dh[j]
 
         # External rotational
         (ent, cp, dh) = molecule.getExtRotationalThermo(oFile, data.Temp)
@@ -137,18 +137,18 @@ def main():
             atomsH += data.atomH[atom]
         H = H * ha_to_kcal + atomsH
 
-        if molecule.Etype == 'cbsqb3':
-            b = 0
-            for bonds in molecule.bonds:
-                H += bonds * data.bondC[b]
-                b += 1
-
-        # TODO What's going on here
-        H += Thermal[i * len(Temp) + 0]
-        print('%12.2f' % H + '%12.2f' % Entropy[i * len(Temp) + 0])
-        for c in range(1, 8):
-            print('%12.2f' % Cp[i * len(Temp) + c]),
-        print('\n')
+        # if molecule.Etype == 'cbsqb3':
+        #     b = 0
+        #     for bonds in molecule.bonds:
+        #         H += bonds * data.bondC[b]
+        #         b += 1
+        #
+        # # TODO What's going on here
+        # H += Thermal[i * len(Temp) + 0]
+        # print('%12.2f' % H + '%12.2f' % Entropy[i * len(Temp) + 0])
+        # for c in range(1, 8):
+        #     print('%12.2f' % Cp[i * len(Temp) + c]),
+        # print('\n')
 
 
 

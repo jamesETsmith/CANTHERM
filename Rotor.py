@@ -16,13 +16,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-from numpy import *
-import pdb
-import re #, os, sys
-import matplotlib.pyplot as plt
+### General Modules ###
+import re
 import numpy as np
 from functools import reduce
+import matplotlib.pyplot as plt
 la = np.linalg
+
+### CanTherm Modules ###
+from constants import *
 
 import readGeomFc
 
@@ -65,96 +67,43 @@ class Rotor:
 
            Make sure the atoms are in the same order as the original energy
     '''
-    pivotAtom = 0
-    atomsList = []
-    pivot2 = 0
-    moments = []
-    level = 0
-    r = mat('0.0 0.0 0.0')
-    symm = 1.0
-    energies = []
-    pot_coeffs = np.array([])
+    # energies = []
+    # pot_coeffs = np.array([])
 
-    def __init__(self, log_file, geom, masses, bonds):
-        # self.pivotAtom = atomsList[0]
-        # self.atomsList = atomsList
-        # self.pivot2 = pivot2
-        # self.level = level
-        # self.parent = 0
-        # self.symm = symm
-        # self.nonRotorList = []
-        # for j in range(len(Mass)):
-        #     if (self.atomsList.count(j + 1) == 0):
-        #         self.nonRotorList.append(j + 1)
-
+    def __init__(self, log_file, geom, masses, bonds, sym):
         self.geom = geom # list
-        self.masses = masses  # 2D list index 1 is atom, index 2 is x/y/z
-        self.natom = len(self.masses)
+        self.masses = np.array( [masses[i,0] for i in range(len(masses))] )
+        self.natom = self.masses.size
         self.bonds = bonds
-
         self.log_file =  log_file
+        self.sym = sym
+        self.e_levels = np.array([])
+
         self.read_scan_data(self.log_file)
         self.fit_potential()
         # self.plot()
-        self.calc_axis()
+        self.load_atom_lists()
         # self.plot_rotational_pes()
+        self.calc_reduced_moment()
+        self.calc_e_levels()
+    ### Mandatory Functions ###
 
-    # def getAxes(self, geom, Mass):
-    #     z = -(geom[self.pivot2 - 1, :] - geom[self.pivotAtom - 1, :])
-    #     z = z / linalg.norm(z)
-    #
-    #     cm = matrix('0.0 0.0 0.0')
-    #
-    #     M = 0.0
-    #     for i in self.atomsList:
-    #         cm = cm + Mass[i - 1] * geom[i - 1, :]
-    #         M = M + Mass[i - 1]
-    #     cm = cm / M
-    #
-    #     xtemp = (cm - geom[self.pivotAtom - 1, :])
-    #     xtemp = xtemp / linalg.norm(xtemp)
-    #
-    #     diff = xtemp - z
-    #     different = False
-    #
-    #     for i in range(3):
-    #         if not(-1e-10 < (xtemp[0, i] - z[0, i]) < 1e-10):
-    #             different = True
-    #             break
-    #
-    #     if (different):
-    #         x = xtemp - (z * transpose(xtemp)) * z
-    #         x = x / linalg.norm(x)
-    #         y = matrix(cross(z, x))
-    #     else:
-    #         xtemp = z + mat(' 0.0 0.0 1.0')
-    #         x = xtemp - (z * transpose(xtemp)) * z
-    #         x = x / linalg.norm(x)
-    #         y = matrix(cross(z, x))
-    #
-    #     self.dircos = matrix(zeros((3, 3), dtype=float))
-    #     self.dircos[0, :] = x
-    #     self.dircos[1, :] = y
-    #     self.dircos[2, :] = z
-
-    def calc_axis(self):
+    def load_atom_lists(self):
         '''
-        Calculates the axis of hindered rotation and assign mocules to their
-        respective top (i.e. which side of the bond they are on).
+        Use bonds to assign which atoms are a part of the rotor.
         '''
 
-        geom = np.array(self.geom)
-        masses = np.array(self.masses)
+        # geom = np.array(self.geom)
         natom = self.natom
 
         # Option 1: Along the axis of the dihedral bond
         # Shift pivot 2 to the origin
-        p2 = np.array(geom[self.pivot2,:])
-        geom[:] -= p2
-        p1 = np.array(geom[self.pivot1,:]) # After translation
-
-        rot_mat = er_rotation(p1,np.array([0,0,1])) # Rotate to z-axis
-        self.geom = np.dot(geom,rot_mat.T) #np.einsum('ij,kj->ik', rot_mat, geom)
+        # p2 = np.array(geom[self.pivot2,:])
+        # geom[:] -= p2
+        # p1 = np.array(geom[self.pivot1,:]) # After translation
+        #
+        # rot_mat = er_rotation(p1,np.array([0,0,1])) # Rotate to z-axis
+        # self.geom = np.dot(geom,rot_mat.T) #np.einsum('ij,kj->ik', rot_mat, geom)
         # self.plot() # TODO
 
         # Assign the atoms to atomlist for each top
@@ -165,6 +114,9 @@ class Rotor:
         # print("SETS0", sets) # TODO
         idx = self.bonds.index([min(self.pivot1,self.pivot2),
                                 max(self.pivot1,self.pivot2)])
+
+        # Remove the bond between the two tops to create disjoint set of
+        # connected atoms. TODO
         del self.bonds[idx]
 
         for b in self.bonds:
@@ -201,49 +153,29 @@ class Rotor:
 
         self.alist1 = sets[p1_idx]
         self.alist2 = sets[p2_idx]
+
+        # Remove the pivot atoms from the atomlists
         self.alist1.remove(self.pivot1)
         self.alist2.remove(self.pivot2)
 
-        print("ALIST1", self.alist1, self.pivot1, len(self.alist1))
-        print("ALIST2", self.alist2, self.pivot2)
+        if len(self.alist1 + self.alist2) != self.masses.size - 2:
+            print("WARNING: ATOMS MISSING FROM ONE OR BOTH TOPS OF THIS ROTOR")
+
+        # print("ALIST1", self.alist1, self.pivot1, len(self.alist1))
+        # print("ALIST2", self.alist2, self.pivot2)
         return
 
-    def getMoments(self, geom, Mass):
-        geomTemp = geom.copy()
 
-        r = geom[self.pivotAtom - 1, :]
-
-        self.r = r.copy()
-
-        # translate so that pivot atom is at the origin
-        for i in range(Mass.size):
-            geomTemp[i, :] = geom[i, :] - geom[self.pivotAtom - 1, :]
-
-        # now rotate so that the axes are parallel to rotor axes
-        for i in range(Mass.size):
-            geomTemp[i, :] = transpose(self.dircos * transpose(geomTemp[i, :]))
-
-        A = 0.0  # moment of inertia about the z axis
-        B = 0.0  # xz cross product of ineria
-        C = 0.0  # yz cross product of inertia
-        Ux = 0.0  # first order x moment
-        x = geomTemp[:, 0]
-        y = geomTemp[:, 1]
-        z = geomTemp[:, 2]
-
-        Uy = 0.0
-
-        for k in self.atomsList:
-            i = k - 1
-            A = A + Mass[i] * (x[i]**2 + y[i]**2)
-            B = B + Mass[i] * x[i] * z[i]
-            C = C + Mass[i] * y[i] * z[i]
-            Ux = Ux + Mass[i] * x[i]
-            Uy = Uy + Mass[i] * y[i]
-
-        self.moments = [A, B, C, Ux]
 
     def read_scan_data(self, file_name):
+        '''
+        Read the atoms in the dihedral angle and the energies of the 1-D PES
+        from the log file of the calculation that scans the dihedral angle.
+
+        .. note:
+            The energies are saved in J/mol (SI units).
+        '''
+
         energy_offset = 0
         energies = []
 
@@ -257,7 +189,7 @@ class Rotor:
 
                 # Get pivot atoms
                 if re.search('D\s+\d', line):
-                    print(line.split()) # TODO
+                    # print(line.split()) # TODO
                     splt = line.split()
                     self.dihedral = np.array([int(splt[1]), int(splt[2]),
                                               int(splt[3]), int(splt[4])]) - 1
@@ -282,9 +214,175 @@ class Rotor:
                     break
 
         # TODO Clean this up and just use self.* throughout function
-        self.energies = energies
-        self.energy_offset = energy_offset
-        return
+        self.energy_offset = energy_offset * ha_to_j
+        self.energies = np.array(energies)*ha_to_j*1e3 - self.energy_offset
+        # self.energies -= np.min(self.energies)
+
+
+
+
+    def fit_potential(self, a=None, e=None, n_term=15):
+        '''
+        A is the matrix of fourier terms. E are the energies. N_term is the
+        number of Fourier terms to include in the expansion.
+        '''
+
+        if e == None: e = self.energies
+
+        if a == None:
+            a = np.zeros( (e.shape[0], n_term) )
+            th = np.linspace(0,2*np.pi,e.shape[0])
+
+            for r in range(a.shape[0]):
+                for c in range(a.shape[1]):
+                    # First coefficient (no sinusoidal function)
+                    if c == 0:
+                        a[r,c] = 1
+                    # a coeffs
+                    elif c%2 == 0 and c > 0:
+                        a[r,c] = np.cos(int((c + 1)/2) * th[r])
+                    # b coeffs
+                    else:
+                        a[r,c] = np.sin(int((c + 1)/2) * th[r])
+
+        self.pot_coeffs = reduce(np.dot, (la.inv(np.dot(a.T, a)), a.T, e))
+
+
+
+    def calc_reduced_moment(self):
+        '''
+        Calculate the reduced moment of inertia for the rotor.
+        '''
+
+        masses = self.masses
+        geom = np.array(self.geom)
+
+        m1 = 0
+        m2 = 0
+
+        cm1 = np.zeros((3,))
+        cm2 = np.zeros((3,))
+
+        for a1 in self.alist1:
+            cm1 += masses[a1] * geom[a1,:]
+            m1 += masses[a1]
+
+        for a2 in self.alist2:
+            cm2 += masses[a2] * geom[a2,:]
+            m2 += masses[a2]
+
+        cm1 /= m1
+        cm2 /= m2
+
+        ax_of_rot = (cm1-cm2)/la.norm(cm1-cm2)
+
+        I1 = 0.0
+        I2 = 0.0
+
+        for a1 in self.alist1:
+            r1 = (geom[a1,:] - cm1) - ((geom[a1,:] - cm1) * ax_of_rot.T) * \
+                ax_of_rot
+            I1 += masses[a1] * la.norm(r1)**2
+
+        for a2 in self.alist1:
+            r2 = (geom[a2,:] - cm2) - ((geom[a2,:] - cm2) * ax_of_rot.T) * \
+                ax_of_rot
+            I2 += masses[a2] * la.norm(r2)**2
+
+
+        self.i_red = 1.0/ (1.0/I1 + 1.0/I2)
+
+        # Change units from g/mol*A^2 to kg*m^2
+        self.i_red /= 1.0e23
+        self.i_red /= N_avo
+
+
+
+    def calc_e_levels(self):
+        '''
+        Calculate the hindered rotor energies for the rotor object.
+
+        Energy levels are in J
+        '''
+
+        m = 250
+        ham_ir = np.zeros((m*2+1, m*2+1), dtype=np.complex_) # hindered rotor hamiltonian
+
+        i_red = self.i_red
+        pot_coeffs = self.pot_coeffs
+        n_fit = int((pot_coeffs.size - 1)/2)
+
+        for n in range(-m, m+1):
+            # (kg * m^2/s)^2 / (kg * m^2) [=] kg * m^2 / s^2 [=] J
+            # print((n-m)**2 * h**2 / (8 * np.pi**2 * i_red)) # TODO
+            # print(pot_coeffs[0])
+            ham_ir[n+m,n+m] = n**2 * h**2 / (8.0 * np.pi**2 * i_red) # Kinetic Contr.
+            ham_ir[n+m,n+m] += pot_coeffs[0]                           # Potential Contr.
+
+            for k in range(1, n_fit+1):
+                # rows > cols (below the diagonal)
+                if n + m - k >= 0:
+                    ham_ir[n+m,n+m-k] = pot_coeffs[(k-1)*2 + 1]/2 # a_k term
+                    ham_ir[n+m,n+m-k] -= pot_coeffs[(k-1)*2 + 2] * 1j/2 # b_k term
+                # cols > rows (above the diagonal)
+                if n + m + k < 2*m+1:
+                    ham_ir[n+m,n+m+k] = pot_coeffs[(k-1)*2 + 1]/2 # a_k term
+                    ham_ir[n+m,n+m-k] += pot_coeffs[(k-1)*2 + 2] * 1j/2 # b_k term
+        # print(ham_ir)
+        # plt.figure()
+        # plt.matshow(ham_ir.real)
+        # plt.matshow(ham_ir.imag)
+        # plt.show()
+        # exit(0)
+        self.e_levels, _ = la.eigh(ham_ir)
+
+
+    ### Optional Functions ###
+
+    def calculate_thermo(self, t):
+        '''
+        Return the partition function, entropy, enthalpy, and heat capacity.
+
+        TODO: Need to add symmetry factor and possibly degeneracy.
+        '''
+
+        eps = self.e_levels
+        # mu = c_in_cm * 1580
+        mu = 84.4 * c_in_cm
+        # mu = 48.6 * c_in_cm
+        # eps = np.array([h*mu*(n+0.5) for n in range(10000)])
+        # exit()
+        zpe = eps[0] * N_avo/ 1.0e3/ kcal_to_kj
+        bw0 = np.exp(-eps[0]/kb/t)
+        eps -= eps[0]
+
+        q_ir = 0
+        s_ir = 0
+        h_ir = 0
+        cp_ir = 0
+
+        bw = np.exp(-eps /(kb * t)) # Boltzmann weights
+        # print(bw)
+        q_ir = np.sum(bw)
+        h_ir = zpe+np.sum(eps * bw) / q_ir * N_avo /1.0e3 /kcal_to_kj # kcal/mol
+        print("Temp %i" % t)
+        print("H %f" % h_ir)
+        print("ZPE %f" % zpe)
+
+        cp_ir = (q_ir * np.sum(eps**2 * bw) - np.sum(eps * bw)**2)* N_avo**2 / \
+            (q_ir**2 * R * t**2 * cal_to_j) # cal/(mol K)
+        print("Cp %f"%cp_ir)
+
+        # q_ir /= self.sym
+        print("Q %f" % q_ir)
+        print("Q_exact %f" % ( 1/( 1 - np.exp(-h*mu/(kb*t)) )) )
+
+
+        print((h_ir - zpe) * 1.0e3 / t,np.log(q_ir) * R / cal_to_j)
+        s_ir = (h_ir - zpe) * 1.0e3 / t + np.log(q_ir) * R / cal_to_j # cal/(mol K)
+        print("S %f\n" % s_ir)
+
+        return q_ir, s_ir, h_ir, cp_ir
 
 
     def plot(self):
@@ -343,7 +441,6 @@ class Rotor:
 
         plt.show()
 
-        return
 
 
     def write_potential_to_file(self, energy_offset, energies, file_name):
@@ -355,7 +452,7 @@ class Rotor:
                 f.write("%8i\t\t\t%16.8f\n"%(i,energy+energy_offset))
                 i += 1
 
-        return
+
 
     def plot_rotational_pes(self, fitted=True, n_fit=100):
         '''
@@ -368,46 +465,14 @@ class Rotor:
 
         plt.figure()
         plt.plot(np.linspace(0,2*np.pi, num=len(self.energies)),
-                 np.array(self.energies), # - np.min(self.energies),# + self.energy_offset,
+                 np.array(self.energies), marker='o', linestyle='--',
                  label="Calculated")
         plt.plot(th, v_fit, label="Fit")
         plt.legend()
         plt.show()
 
 
-    def fit_potential(self, a=None, e=None, n_term=23):
-        '''
-        A is the matrix of fourier terms. E are the energies. N_term is the
-        number of Fourier terms to include in the expansion.
-        '''
 
-        if e == None:
-            e = np.array(self.energies) #- np.min(self.energies) # self.energy_offset
-            e = e[:-1] # Last element is a duplicate.
-
-        # e = np.sin(np.linspace(0,2*np.pi,num=24))/100  + np.sin(3 * np.linspace(0,2*np.pi,num=24))/100
-        # self.energies = e
-
-        if a == None:
-            a = np.zeros( (e.shape[0], n_term) )
-            th = np.linspace(0,2*np.pi,e.shape[0])
-
-            for r in range(a.shape[0]):
-                for c in range(a.shape[1]):
-                    # First coefficient (no sinusoidal function)
-                    if c == 0:
-                        a[r,c] = 1
-                    # a coeffs
-                    elif c%2 == 0 and c > 0:
-                    #    a[r,c] = 1 - np.cos(k[c]/2 * th[r])
-                        a[r,c] = np.cos(int((c + 1)/2) * th[r])
-                    # b coeffs
-                    else:
-                        a[r,c] = np.sin(int((c + 1)/2) * th[r])
-
-        self.pot_coeffs = reduce(np.dot, (la.inv(np.dot(a.T, a)), a.T, e))
-        # print(self.pot_coeffs) # TODO
-        return
 
     def calculate_potential(self, th=None, n_fit=1000 ):
         '''
@@ -434,3 +499,41 @@ class Rotor:
                       np.sin( int((j + 1)/2) * th[i])
 
         return v_fit
+
+
+
+    ### Deprecated ###
+    def getMoments(self, geom, Mass):
+        geomTemp = geom.copy()
+
+        r = geom[self.pivotAtom - 1, :]
+
+        self.r = r.copy()
+
+        # translate so that pivot atom is at the origin
+        for i in range(Mass.size):
+            geomTemp[i, :] = geom[i, :] - geom[self.pivotAtom - 1, :]
+
+        # now rotate so that the axes are parallel to rotor axes
+        for i in range(Mass.size):
+            geomTemp[i, :] = transpose(self.dircos * transpose(geomTemp[i, :]))
+
+        A = 0.0  # moment of inertia about the z axis
+        B = 0.0  # xz cross product of ineria
+        C = 0.0  # yz cross product of inertia
+        Ux = 0.0  # first order x moment
+        x = geomTemp[:, 0]
+        y = geomTemp[:, 1]
+        z = geomTemp[:, 2]
+
+        Uy = 0.0
+
+        for k in self.atomsList:
+            i = k - 1
+            A = A + Mass[i] * (x[i]**2 + y[i]**2)
+            B = B + Mass[i] * x[i] * z[i]
+            C = C + Mass[i] * y[i] * z[i]
+            Ux = Ux + Mass[i] * x[i]
+            Uy = Uy + Mass[i] * y[i]
+
+        self.moments = [A, B, C, Ux]
