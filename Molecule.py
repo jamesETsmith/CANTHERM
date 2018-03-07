@@ -274,13 +274,6 @@ class Molecule:
                 print('Exiting...')
                 exit()
 
-            # Create rotor object for each hindered rotor
-            self.rotors = []
-            for i in range(self.numRotors):
-                self.rotors.append(Rotor.Rotor(file_tokens[i], self.geom,
-                                                self.Mass, self.bonds,
-                                                int(sym_tokens[i+1]) ))
-
             # Read the hindered rotor "frequency"
             # This will be removed from the frequencies list.
             line = readGeomFc.readMeaningfulLine(file)
@@ -296,6 +289,15 @@ class Molecule:
                 print("Removing hindered rotor frequency %s cm^-1 from the list of vibrational frequencies." % tokens[i+1])
                 rm_idx = self.Freq.index(float(tokens[i+1]))
                 del self.Freq[rm_idx]
+
+            # Create rotor object for each hindered rotor
+            self.rotors = []
+            for i in range(self.numRotors):
+                self.rotors.append(Rotor.Rotor(file_tokens[i], self.geom,
+                                                self.Mass, self.bonds,
+                                                int(sym_tokens[i+1]),
+                                                v_ho=float(tokens[i+1]) ))
+
 
             # print(self.Freq) # TODO
 

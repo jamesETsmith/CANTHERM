@@ -1,0 +1,18 @@
+Thermo
+TLIST
+7
+298 300 400 500 600 800 1000
+Scale 0.99
+
+!!! Product of PVC rxn
+Mol 1
+Nonlinear
+Geom FILE pvc_gs.log
+FREQ FILE pvc_gs.log
+ENERGY FILE pvc_gs.log CBS-QB3
+EXTSYM 1
+NELEC 2
+ROTORS 1
+./rotors/pvc-r-4-3.log
+ROTORSYM 1
+ROTORFREQ 87.5169

@@ -30,7 +30,8 @@ N_avo = 6.0221409e23
 
 ### Energy Conversions ###
 ha_to_kcal = 627.5095 # kcal/mol/Ha
-ha_to_kj = 2625.50 # kJ/mol/Ha
+ha_to_kj_mol = 2625.50 # kJ/mol/Ha
 kcal_to_kj = 4.184 # kJ/kcal
 cal_to_j = 4.184 # J/cal
 ha_to_j = 4.359744650e-18 # J/ha
+# ha_to_kj = ha_to

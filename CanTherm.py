@@ -37,9 +37,9 @@ class CanTherm:
     Cp = []
     Parition = []
     scale = 0.0
-    # CBSQB3 E for H, N, O, C, P
+    # CBSQB3 E for H, N, O, C, P, Cl
     atomEcbsqb3 = {'H': -0.499818, 'N': -54.520543, 'O': -74.987624,
-                   'C': -37.785385, 'P': -340.817186}
+                   'C': -37.785385, 'P': -340.817186, 'Cl':-459.683658}
     # G3 E for H, N, O, C, P
     atomEg3 = {'H': -0.5010030, 'N': -54.564343, 'O': -75.030991, 'C': -37.827717,
                'P': -341.116432}
@@ -106,6 +106,14 @@ def main():
         #         Cp[i * len(Temp) + j] += cp[j]
         #         Thermal[i * len(Temp) + j] += dh[j]
 
+        test = []
+        if molecule.numRotors != 0:
+            for rotor in molecule.rotors:
+                for T in data.Temp:
+                    q_ir, s_ir, h_ir, cp_ir = rotor.calculate_thermo(T,harmonic=False)
+                    test.append(cp_ir)
+
+
         # External rotational
         (ent, cp, dh) = molecule.getExtRotationalThermo(oFile, data.Temp)
         for j in range(len(Temp)):
@@ -132,10 +140,10 @@ def main():
             atomE = data.atomEccsdt_f12_tz
         if molecule.Etype == 'ub3lyp':
             atomE = data.atomEub3lyp
-        for atom in atoms:
-            H -= atomE[atom]
-            atomsH += data.atomH[atom]
-        H = H * ha_to_kcal + atomsH
+        # for atom in atoms:
+        #     H -= atomE[atom]
+        #     atomsH += data.atomH[atom]
+        # H = H * ha_to_kcal + atomsH
 
         # if molecule.Etype == 'cbsqb3':
         #     b = 0

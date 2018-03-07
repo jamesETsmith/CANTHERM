@@ -70,7 +70,8 @@ class Rotor:
     # energies = []
     # pot_coeffs = np.array([])
 
-    def __init__(self, log_file, geom, masses, bonds, sym):
+    def __init__(self, log_file, geom, masses, bonds, sym, v_ho=0):
+        # Member variables
         self.geom = geom # list
         self.masses = np.array( [masses[i,0] for i in range(len(masses))] )
         self.natom = self.masses.size
@@ -78,7 +79,9 @@ class Rotor:
         self.log_file =  log_file
         self.sym = sym
         self.e_levels = np.array([])
+        self.v_ho = v_ho
 
+        # Functions
         self.read_scan_data(self.log_file)
         self.fit_potential()
         # self.plot()
@@ -214,8 +217,11 @@ class Rotor:
                     break
 
         # TODO Clean this up and just use self.* throughout function
+        print(energy_offset)
         self.energy_offset = energy_offset * ha_to_j
-        self.energies = np.array(energies)*ha_to_j*1e3 - self.energy_offset
+        # print("OFFSET (J): %e" %(self.energy_offset * N_avo/1e3))
+        # exit(0)
+        self.energies = np.array(energies)*ha_to_j - self.energy_offset # J
         # self.energies -= np.min(self.energies)
 
 
@@ -245,7 +251,13 @@ class Rotor:
                     else:
                         a[r,c] = np.sin(int((c + 1)/2) * th[r])
 
-        self.pot_coeffs = reduce(np.dot, (la.inv(np.dot(a.T, a)), a.T, e))
+        pot_coeffs = reduce(np.dot, (la.inv(np.dot(a.T, a)), a.T, e))
+        # Store them in an easier to use manner
+        self.v0_coeff = pot_coeffs[0] # V_0 coeff
+        self.pot_coeffs = np.zeros((2,int((n_term-1)/2)))
+        for i in range(self.pot_coeffs.shape[1]):
+            self.pot_coeffs[0,i] = pot_coeffs[2*i+2] # a_k coeffs
+            self.pot_coeffs[1,i] = pot_coeffs[2*i+1] # b_k coeffs
 
 
 
@@ -309,78 +321,83 @@ class Rotor:
         ham_ir = np.zeros((m*2+1, m*2+1), dtype=np.complex_) # hindered rotor hamiltonian
 
         i_red = self.i_red
-        pot_coeffs = self.pot_coeffs
-        n_fit = int((pot_coeffs.size - 1)/2)
+        coeffs = self.pot_coeffs
+        v0 = self.v0_coeff
+        n_fit = coeffs.shape[1] #int((pot_coeffs.size - 1)/2)
 
         for n in range(-m, m+1):
             # (kg * m^2/s)^2 / (kg * m^2) [=] kg * m^2 / s^2 [=] J
             # print((n-m)**2 * h**2 / (8 * np.pi**2 * i_red)) # TODO
-            # print(pot_coeffs[0])
             ham_ir[n+m,n+m] = n**2 * h**2 / (8.0 * np.pi**2 * i_red) # Kinetic Contr.
-            ham_ir[n+m,n+m] += pot_coeffs[0]                           # Potential Contr.
+            ham_ir[n+m,n+m] += v0                                    # Potential Contr.
 
             for k in range(1, n_fit+1):
                 # rows > cols (below the diagonal)
                 if n + m - k >= 0:
-                    ham_ir[n+m,n+m-k] = pot_coeffs[(k-1)*2 + 1]/2 # a_k term
-                    ham_ir[n+m,n+m-k] -= pot_coeffs[(k-1)*2 + 2] * 1j/2 # b_k term
+                    ham_ir[n+m,n+m-k] = 0.5 * coeffs[0,k-1] # a_k term
+                    ham_ir[n+m,n+m-k] += 1j * 0.5 * coeffs[1,k-1] # b_k term
                 # cols > rows (above the diagonal)
                 if n + m + k < 2*m+1:
-                    ham_ir[n+m,n+m+k] = pot_coeffs[(k-1)*2 + 1]/2 # a_k term
-                    ham_ir[n+m,n+m-k] += pot_coeffs[(k-1)*2 + 2] * 1j/2 # b_k term
-        # print(ham_ir)
-        # plt.figure()
-        # plt.matshow(ham_ir.real)
-        # plt.matshow(ham_ir.imag)
+                    ham_ir[n+m,n+m+k] = 0.5 * coeffs[0,k-1] # a_k term
+                    ham_ir[n+m,n+m+k] -= 1j * 0.5 * coeffs[1,k-1] # b_k term
+
+        self.e_levels, _ = la.eigh(ham_ir)
+        plt.figure()
+        v_fit = self.calculate_potential()
+        v_fit = np.roll(v_fit, 100)
+        th = np.linspace(0,2*np.pi, num=v_fit.size)
+        plt.plot(th, v_fit)
+
+        for i in range(100):
+            plt.plot(th, [self.e_levels[i]]*th.size)
         # plt.show()
         # exit(0)
-        self.e_levels, _ = la.eigh(ham_ir)
 
 
     ### Optional Functions ###
 
-    def calculate_thermo(self, t):
+    def calculate_thermo(self, t, harmonic=False):
         '''
         Return the partition function, entropy, enthalpy, and heat capacity.
 
-        TODO: Need to add symmetry factor and possibly degeneracy.
+        TODO: Need to add degeneracy?
         '''
 
-        eps = self.e_levels
-        # mu = c_in_cm * 1580
-        mu = 84.4 * c_in_cm
-        # mu = 48.6 * c_in_cm
-        # eps = np.array([h*mu*(n+0.5) for n in range(10000)])
-        # exit()
+        if not harmonic:
+            eps = self.e_levels.copy()
+        else:
+            mu = c_in_cm * self.v_ho
+            eps = np.array([h*mu*(n+0.5) for n in range(10000)])
+
+        # print(eps)
+        # mu = 88.2 * c_in_cm # TODO
         zpe = eps[0] * N_avo/ 1.0e3/ kcal_to_kj
-        bw0 = np.exp(-eps[0]/kb/t)
-        eps -= eps[0]
+        eps -= eps[0] # Shift by ZPE
+        eps *= N_avo # Convert to molar quantities (J/mol)
+        # print(eps)
 
-        q_ir = 0
-        s_ir = 0
-        h_ir = 0
-        cp_ir = 0
-
-        bw = np.exp(-eps /(kb * t)) # Boltzmann weights
-        # print(bw)
-        q_ir = np.sum(bw)
-        h_ir = zpe+np.sum(eps * bw) / q_ir * N_avo /1.0e3 /kcal_to_kj # kcal/mol
+        bw = np.exp(-eps /(R * t)) # Boltzmann weights
+        # print(-eps/(R*t))
         print("Temp %i" % t)
-        print("H %f" % h_ir)
-        print("ZPE %f" % zpe)
 
-        cp_ir = (q_ir * np.sum(eps**2 * bw) - np.sum(eps * bw)**2)* N_avo**2 / \
-            (q_ir**2 * R * t**2 * cal_to_j) # cal/(mol K)
-        print("Cp %f"%cp_ir)
+        # Partition Function
+        q_ir = np.sum(bw)
+        q_ir /= self.sym
+        print("Q %e" % q_ir)
+        # print("Q_exact %f" % ( 1/( 1 - np.exp(-h*mu/(kb*t)) )) ) # TODO
 
-        # q_ir /= self.sym
-        print("Q %f" % q_ir)
-        print("Q_exact %f" % ( 1/( 1 - np.exp(-h*mu/(kb*t)) )) )
+        # Enthalpy
+        h_ir = np.sum(eps * bw) / np.sum(bw) /1.0e3 /kcal_to_kj # kcal/mol
+        print("H %e" % h_ir)
+        # print("ZPE %f" % zpe)
 
+        # Heat Capacity
+        cp_ir = (np.sum(bw) * np.sum(eps*eps*bw) - np.sum(eps*bw)**2)/ (np.sum(bw)**2 * R * t**2 * cal_to_j) # cal/(mol K)
+        print("Cp %e"%cp_ir)
 
-        print((h_ir - zpe) * 1.0e3 / t,np.log(q_ir) * R / cal_to_j)
-        s_ir = (h_ir - zpe) * 1.0e3 / t + np.log(q_ir) * R / cal_to_j # cal/(mol K)
-        print("S %f\n" % s_ir)
+        # Entropy
+        s_ir = (np.sum(eps*bw)/np.sum(bw) / t + np.log(q_ir) * R )/ cal_to_j # cal/(mol K)
+        print("S %e\n" % s_ir)
 
         return q_ir, s_ir, h_ir, cp_ir
 
@@ -487,16 +504,10 @@ class Rotor:
         if self.pot_coeffs.shape[0] == 0: self.fit_potential()
 
         for i in range(th.shape[0]):
-          for j in range(self.pot_coeffs.shape[0]):
-              if j == 0:
-                  v_fit[i] += self.pot_coeffs[j] * 1.0
-                  continue
-              elif j%2 == 0 and j > 0:
-                  v_fit[i] += self.pot_coeffs[j] * \
-                      np.cos( int((j + 1)/2) * th[i])
-              elif j%2 == 1:
-                  v_fit[i] += self.pot_coeffs[j] * \
-                      np.sin( int((j + 1)/2) * th[i])
+          v_fit[i] += self.v0_coeff * 1.0
+          for j in range(self.pot_coeffs.shape[1]):
+              v_fit[i] += self.pot_coeffs[0,j] * np.cos((j+1) * th[i])
+              v_fit[i] += self.pot_coeffs[1,j] * np.sin((j+1) * th[i])
 
         return v_fit
 
