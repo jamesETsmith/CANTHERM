@@ -1,3 +1,21 @@
+#!/usr/bin/env python
+'''
+    Copyright (C) 2018, Sandeep Sharma and James E. T. Smith
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'''
+
 import pdb
 import readGeomFc
 from Harmonics import *
@@ -7,7 +25,8 @@ import scipy.linalg
 import geomUtility
 import os
 from constants import *
-
+import numpy as np
+import Rotor
 
 class Molecule:
     # has other attributes
@@ -15,6 +34,7 @@ class Molecule:
     # potentialFile, Iext, ebase, bonds
 
     def __init__(self, file, isTS):
+        self.rotors = []
         self.Freq = []
         self.Harmonics = []
         self.hindFreq = []
@@ -47,7 +67,7 @@ class Molecule:
                 self.geom[j, 1] = double(tokens[4])
                 self.geom[j, 2] = double(tokens[5])
                 if (int(tokens[1]) == 6):
-                    self.Mass[j] = 12.0
+                    self.Mass[j] = 12.00000
                 if (int(tokens[1]) == 8):
                     self.Mass[j] = 15.99491
                 if (int(tokens[1]) == 1):
@@ -65,7 +85,7 @@ class Molecule:
         if tokens[1].upper() == 'FILE':
             print("reading Geometry from the file: ", tokens[2])
             geomFile = open(tokens[2], 'r')
-            (self.geom, self.Mass) = readGeomFc.readGeom(geomFile)
+            (self.geom, self.Mass, self.bonds) = readGeomFc.readGeom(geomFile)
             # print self.geom
         else:
             print(
@@ -124,14 +144,15 @@ class Molecule:
             exit()
         if tokens[1].upper() == 'FILE':
             print('Reading energy from file: ', tokens[2])
-            energyFile = open(tokens[2], 'r')
             if (tokens[3].upper() == 'CBS-QB3'):
                 self.Etype = 'cbsqb3'
             elif (tokens[3].upper() == 'G3'):
                 self.Etype = 'g3'
             elif (tokens[3].upper() == 'UB3LYP'):
                 self.Etype = 'ub3lyp'
-            self.Energy = readGeomFc.readEnergy(energyFile, self.Etype)
+            elif (tokens[3].upper() == 'DF-LUCCSD(T)-F12'):
+                self.Etype= 'DF-LUCCSD(T)-F12'
+            self.Energy = readGeomFc.readEnergy(tokens[2], self.Etype)
             print(self.Energy, self.Etype)
         elif (len(tokens) == 3):
             self.Energy = float(tokens[1])
@@ -161,74 +182,129 @@ class Molecule:
         self.nelec = int(line.split()[1])
 
 # read rotor information
+#         line = readGeomFc.readMeaningfulLine(file)
+#         if (line.split()[0].upper() != 'ROTORS'):
+#             print('Rotors keyword required')
+#             exit()
+#         self.numRotors = int(line.split()[1])
+#         if self.numRotors == 0:
+#             self.rotors = []
+#             if (len(self.Freq) == 0):
+#                 # calculate frequencies from force constant
+#                 self.getFreqFromFc()
+#             return
+#
+#         rotorFile = line.split()[2]
+#         inertiaFile = open(rotorFile, 'r')
+#         # print self.Mass
+#         (self.rotors) = readGeomFc.readGeneralInertia(inertiaFile, self.Mass)
+#         if len(self.rotors) - 1 != self.numRotors:
+#             print("The number of rotors specified in file, ",
+#                   rotorFile, ' is different than, ', self.numRotors)
+#
+#         if (len(self.Freq) == 0):
+#             # calculate frequencies from force constant
+#             self.getFreqFromFc()
+#
+#
+# # read potential information for rotors
+#         line = readGeomFc.readMeaningfulLine(file)
+#         tokens = line.split()
+#         if tokens[0].upper() != 'POTENTIAL':
+#             print('No information for potential given')
+#             exit()
+#
+#         if tokens[1].upper() == 'SEPARABLE':
+#             if tokens[2].upper() == 'FILES':
+#                 line = readGeomFc.readMeaningfulLine(file)
+#                 tokens = line.split()
+#                 if len(tokens) != self.numRotors:
+#                     print('give a separate potential file for each rotor')
+#                 for files in tokens:
+#                     Kcos = []
+#                     Ksin = []
+#                     harmonic = Harmonics(5, Kcos, Ksin)
+#                     harmonic.fitPotential(files)
+#                     self.Harmonics.append(harmonic)
+#
+#             elif tokens[2].upper() == 'HARMONIC':
+#                 for i in range(self.numRotors):
+#                     line = readGeomFc.readMeaningfulLine(file)
+#                     numFit = int(line.split()[0])
+#                     Ksin = []
+#                     Kcos = []
+#                     for i in range(numFit):
+#                         line = readGeomFc.readMeaningfulLine(file)
+#                         tokens = line.split()
+#                         Kcos.append(tokens[0])
+#                         Ksin.append(tokens[0])
+#                     harmonic = Harmonics(numFit, Kcos, Ksin)
+#                     self.Harmonics.append(harmonic)
+#
+#         elif tokens[1].upper() == 'NONSEPARABLE':
+#             line = readGeomFc.readMeaningfulLine(file)
+#             self.potentialFile = line.split()[0]
+
+        # Rotors
         line = readGeomFc.readMeaningfulLine(file)
-        if (line.split()[0].upper() != 'ROTORS'):
-            print('Rotors keyword required')
+        tokens = line.split()
+
+        if tokens[0].upper() != 'ROTORS':
+            print('No information for the potential given.\nExiting...')
             exit()
+
         self.numRotors = int(line.split()[1])
-        if self.numRotors == 0:
-            self.rotors = []
-            if (len(self.Freq) == 0):
-                # calculate frequencies from force constant
-                self.getFreqFromFc()
-            return
 
-        rotorFile = line.split()[2]
-        inertiaFile = open(rotorFile, 'r')
-        # print self.Mass
-        (self.rotors) = readGeomFc.readGeneralInertia(inertiaFile, self.Mass)
-        if len(self.rotors) - 1 != self.numRotors:
-            print("The number of rotors specified in file, ",
-                  rotorFile, ' is different than, ', self.numRotors)
-
-        if (len(self.Freq) == 0):
-            # calculate frequencies from force constant
-            self.getFreqFromFc()
-
-
-# read potential information for rotors
-        line = readGeomFc.readMeaningfulLine(file)
-        tokens = line.split()
-        if tokens[0].upper() != 'POTENTIAL':
-            print('No information for potential given')
-            exit()
-
-        if tokens[1].upper() == 'SEPARABLE':
-            if tokens[2].upper() == 'FILES':
-                line = readGeomFc.readMeaningfulLine(file)
-                tokens = line.split()
-                if len(tokens) != self.numRotors:
-                    print('give a separate potential file for each rotor')
-                for files in tokens:
-                    Kcos = []
-                    Ksin = []
-                    harmonic = Harmonics(5, Kcos, Ksin)
-                    harmonic.fitPotential(files)
-                    self.Harmonics.append(harmonic)
-
-            elif tokens[2].upper() == 'HARMONIC':
-                for i in range(self.numRotors):
-                    line = readGeomFc.readMeaningfulLine(file)
-                    numFit = int(line.split()[0])
-                    Ksin = []
-                    Kcos = []
-                    for i in range(numFit):
-                        line = readGeomFc.readMeaningfulLine(file)
-                        tokens = line.split()
-                        Kcos.append(tokens[0])
-                        Ksin.append(tokens[0])
-                    harmonic = Harmonics(numFit, Kcos, Ksin)
-                    self.Harmonics.append(harmonic)
-
-        elif tokens[1].upper() == 'NONSEPARABLE':
+        if self.numRotors > 0:
+            # Read the file names for the rotor logs
             line = readGeomFc.readMeaningfulLine(file)
-            self.potentialFile = line.split()[0]
+            file_tokens = line.split()
 
+            if len(file_tokens) != self.numRotors:
+                print('Number of files doesn\'t match the number of rotors.')
+                print('Exiting...')
+                exit()
+
+            # Read the symmetry factors for the internal rotors
+            line = readGeomFc.readMeaningfulLine(file)
+            sym_tokens = line.split()
+            if sym_tokens[0].upper() == 'ROTORSYM' and \
+                len(sym_tokens) - 1 != self.numRotors:
+                print('Number of symmetry factors doesn\'t match the number of rotors.')
+                print('Exiting...')
+                exit()
+
+            # Create rotor object for each hindered rotor
+            self.rotors = []
+            for i in range(self.numRotors):
+                self.rotors.append(Rotor.Rotor(file_tokens[i], self.geom,
+                                                self.Mass, self.bonds,
+                                                int(sym_tokens[i+1]) ))
+
+            # Read the hindered rotor "frequency"
+            # This will be removed from the frequencies list.
+            line = readGeomFc.readMeaningfulLine(file)
+            tokens = line.split()
+
+            if tokens[0].upper() == 'ROTORFREQ' and \
+                len(tokens) - 1 != self.numRotors:
+                print('Number of symmetry factors doesn\'t match the number of rotors.')
+                print('Exiting...')
+                exit()
+
+            for i in range(self.numRotors):
+                print("Removing hindered rotor frequency %s cm^-1 from the list of vibrational frequencies." % tokens[i+1])
+                rm_idx = self.Freq.index(float(tokens[i+1]))
+                del self.Freq[rm_idx]
+
+            # print(self.Freq) # TODO
+
+            # exit(0)
 # read the bonds
-        line = readGeomFc.readMeaningfulLine(file)
-        tokens = line.split()
-        for bond in tokens:
-            self.bonds.append(float(bond))
+        # line = readGeomFc.readMeaningfulLine(file)
+        # tokens = line.split()
+        # for bond in tokens:
+        #     self.bonds.append(float(bond))
 
 #*************************************************************************
 
@@ -340,7 +416,7 @@ class Molecule:
         # print
 
 #*************************************************************************
-    def print_heading(self, oFile, heading):
+    def print_thermo_heading(self, oFile, heading):
         l = len(heading) + 4
         symb = '='
         header = footer = symb * l
@@ -351,7 +427,7 @@ class Molecule:
 
 #*************************************************************************
 
-    def print_contributions(self,oFile,Temp,ent,cp,dH):
+    def print_thermo_contributions(self,oFile,Temp,ent,cp,dH):
         # TODO Still need to check the units on these quantities
         # horizontal_line = '===========    =========    ==========    ========\n'
         horizontal_line = '='*12 + " "*3
@@ -362,9 +438,9 @@ class Molecule:
         temp_string = 'Temp'
         temp_units_string = 'K'
         ent_string = 'S'
-        ent_units_string = 'kcal/(mol K)'
+        ent_units_string = 'cal/(mol K)'
         cp_string = 'Cp'
-        cp_units_string = 'kcal/(mol K)'
+        cp_units_string = 'cal/(mol K)'
         h_string = 'dH'
         h_units_string = 'kcal/mol'
 
@@ -384,6 +460,9 @@ class Molecule:
 #*************************************************************************
 
     def printData(self, oFile):
+        '''
+        Deprecated
+        '''
         geom = self.geom
         Mass = self.Mass
         oFile.write('Geometry:\n')
@@ -433,7 +512,7 @@ class Molecule:
         ent = []
         cp = []
         dH = []
-        self.print_heading( oFile, 'Translational Contributions')
+        self.print_thermo_heading( oFile, 'Translational Contributions')
 
         i = 0
         for T in Temp:
@@ -451,7 +530,7 @@ class Molecule:
             dH.append(5.0 / 2 * R_kcal* T / 1000.0)
             i = i + 1
 
-        self.print_contributions(oFile,Temp,ent,cp,dH)
+        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH
 
@@ -464,7 +543,7 @@ class Molecule:
         dH = []
         parti = []
 
-        self.print_heading(oFile,'Vibrational Contributions' )
+        self.print_thermo_heading(oFile,'Vibrational Contributions' )
         Freq = []
         for freq in self.Freq:
             Freq.append(freq * scale)
@@ -519,7 +598,7 @@ class Molecule:
                 i = i + 1
             j = j + 1
 
-        self.print_contributions(oFile,Temp,ent,cp,dH)
+        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH, parti
 
@@ -532,7 +611,7 @@ class Molecule:
         seed = 500
         numIter = 100000
 
-        self.print_heading(oFile,'Internal Rotational Contributions')
+        self.print_thermo_heading(oFile,'Internal Rotational Contributions')
 
         sigma = 1.0
         for rotor in self.rotors:
@@ -615,7 +694,7 @@ class Molecule:
             dH.append(H / 1e3)
             cp.append(Cp)
 
-        self.print_contributions(oFile,Temp,ent,cp,dH)
+        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH
 
@@ -624,12 +703,17 @@ class Molecule:
 #*************************************************************************
 
     def getIntRotationalThermo_Q(self, oFile, Temp):
+        '''
+        Deprecated
+
+        Sandeep's old main function for this.
+        '''
         ent = [0.0] * len(Temp)
         cp = [0.0] * len(Temp)
         dH = [0.0] * len(Temp)
         parti = [1.0] * len(Temp)
 
-        self.print_heading(oFile, 'Internal Rotation Contributions')
+        self.print_thermo_heading(oFile, 'Internal Rotation Contributions')
 
         sigma = 1.0
         for rotor in self.rotors:
@@ -669,7 +753,7 @@ class Molecule:
                 parti[iT] = parti[iT] * sum
 
 
-        self.print_contributions(oFile,Temp,ent,cp,dH)
+        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH, parti
 
@@ -708,7 +792,7 @@ class Molecule:
         cp = []
         dH = []
 
-        self.print_heading(oFile, "External Rotational Contributions")
+        self.print_thermo_heading(oFile, "External Rotational Contributions")
 
         for T in Temp:
             S = log(math.pi**0.5 * exp(1.5) / self.extSymm)
@@ -720,7 +804,7 @@ class Molecule:
             cp.append(3.0 * R_kcal/ 2.0)
             dH.append(3.0 * R_kcal* T / 2.0 / 1.0e3)
 
-        self.print_contributions(oFile,Temp,ent,cp,dH)
+        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
         return ent, cp, dH
 
 
@@ -755,3 +839,42 @@ class Molecule:
 # rotate coordinate axes to be parallel to principal axes
         (l, v) = linalg.eigh(I)
         self.Iext = l
+
+#**************************************************************************
+    def calculate_Q(self, T):
+        '''
+        For more details see "Molecular Driving Forces" by Dill Chapters 11
+        and 19.
+        '''
+
+        # Translational Contrib.
+        # TODO Assuming Unimolecular for now so it's technically per volume
+        q_tr = np.power((2 * pi * sum(self.Mass) * kb * T)/h**2, 3./2.)
+
+        # Vibrational Contrib.
+        q_vib = 1
+        for freq in self.Freq:
+            q_vib *= 1/( 1 - np.exp(-h * freq * c_in_cm/(kb * T)) )
+
+        # External Rotational Contrib.
+        # TODO Add symm. factor
+        sigma = 1
+        q_rot = np.power(pi * self.Iext[0] * self.Iext[1] * self.Iext[2], 0.5)/sigma
+        q_rot *= np.power(8 * pi**2 * kb * T / h**2, 3./2.)
+
+        # Internal Rotational Contrib.
+        q_ir = 1
+        s_ir = 0
+        h_ir = 0
+        cp_ir = 0
+
+        for rotor in self.rotors:
+            q_ir_i, s_ir_i, h_ir_i, cp_ir_i = rotor.calculate_thermo(T)
+            q_ir *= q_ir_i
+            s_ir += s_ir_i
+            h_ir += s_ir_i
+            cp_ir += s_ir_i
+
+        # print('Temp = %i \t Q_ir: %e\t S_ir: %e\t H_ir: %e\t Cp_ir: %e' % (T, q_ir, s_ir, h_ir, cp_ir))
+        # print( "Tr: %e\t Vib: %e\t Rot: %e\t IR:%e" % (q_tr, q_vib, q_rot, q_ir) )
+        return q_tr * q_vib * q_rot

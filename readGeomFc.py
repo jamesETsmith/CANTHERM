@@ -1,7 +1,22 @@
 #!/usr/bin/env python
-
 # takes the file as an argument and then reads the geometry and lower triangular part
 # of the force constant matrix and the Atomic mass vector
+'''
+    Copyright (C) 2018, Sandeep Sharma and James E. T. Smith
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'''
 
 import os
 from numpy import *
@@ -194,7 +209,27 @@ def readGeom(file):
             Mass[j] = 31.97207
         if (int(tokens[1]) == 9):
             Mass[j] = 18.99840
-    return geom, Mass
+
+    # Read the bonds
+    bond_ind = lines.index('                           !    Initial Parameters    !\n')
+    bond_ind -= 5 # Skip heading
+    reading_bonds = True
+    bonds = []
+    while reading_bonds:
+        if re.search(' ! R\d', lines[bond_ind]):
+            s = re.search('\(([^)]+)', lines[bond_ind]).group(1).split(',')
+            s = [int(s[0])-1, int(s[1])-1]
+            bonds.append(s)
+            # print(s) # TODO
+        if re.search(' ! A\d', lines[bond_ind]):
+            reading_bonds = False
+            break
+        if re.search(' ! D\d', lines[bond_ind]):
+            reading_bonds = False
+            break
+        bond_ind -= 1
+    # exit(0) # TODO
+    return geom, Mass, bonds
 
 
 def readGeomFc(file):
@@ -368,15 +403,27 @@ def printNormalModes(l, v, num, Mass):
 
 
 def readEnergy(file, string):
-    com = file.read()
-    if string == 'cbsqb3':
-        Energy = re.search('CBS-QB3 \(0 K\)= ' +
-                           ' \s*([\-0-9.]+)', com).group(1)
-    elif string == 'g3':
-        Energy = re.search('G3\(0 K\)= ' + ' \s*([\-0-9.]+)', com).group(1)
+    tokens = file.split('.')
+    efile = open(file, 'r')
+    com = efile.read()
 
-    elif string == 'ub3lyp':
-        Energy = re.findall("E\(UB3LYP\) = " + "\s*([\-0-9.]+)", com)[-1]
+
+    # Gaussian File
+    if tokens[-1] == 'log':
+        if string == 'cbsqb3':
+            Energy = re.search('CBS-QB3 \(0 K\)= ' +
+                               ' \s*([\-0-9.]+)', com).group(1)
+        elif string == 'g3':
+            Energy = re.search('G3\(0 K\)= ' + ' \s*([\-0-9.]+)', com).group(1)
+
+        elif string == 'ub3lyp':
+            Energy = re.findall("E\(UB3LYP\) = " + "\s*([\-0-9.]+)", com)[-1]
+
+    # Molpro File
+    elif tokens[-1] == 'res':
+        if string == 'DF-LUCCSD(T)-F12':
+            Energy = re.search('DF-LUCCSD\(T\)-F12\/cc-pVTZ-F12 energy=' + \
+                                 ' \s*([\-0-9.]+)', com).group(1)
     return float(Energy)
 
 
