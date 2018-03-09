@@ -1,19 +1,25 @@
 #!/usr/bin/env python
 '''
-    Copyright (C) 2018, Sandeep Sharma and James E. T. Smith
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+********************************************************************************
+*                                                                              *
+*    CANTHERM                                                                  *
+*                                                                              *
+*    Copyright (C) 2018, Sandeep Sharma and James E. T. Smith                  *
+*                                                                              *
+*    This program is free software: you can redistribute it and/or modify      *
+*    it under the terms of the GNU General Public License as published by      *
+*    the Free Software Foundation, either version 3 of the License, or         *
+*    (at your option) any later version.                                       *
+*                                                                              *
+*    This program is distributed in the hope that it will be useful,           *
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *
+*    GNU General Public License for more details.                              *
+*                                                                              *
+*    You should have received a copy of the GNU General Public License         *
+*    along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
+*                                                                              *
+********************************************************************************
 '''
 
 import sys
@@ -37,6 +43,8 @@ class CanTherm:
     Cp = []
     Parition = []
     scale = 0.0
+    out_file = 'output'
+
     # CBSQB3 E for H, N, O, C, P, Cl
     atomEcbsqb3 = {'H': -0.499818, 'N': -54.520543, 'O': -74.987624,
                    'C': -37.785385, 'P': -340.817186, 'Cl':-459.683658}
@@ -60,162 +68,111 @@ class CanTherm:
     bondC = [-0.11, -0.3, -0.08, -0.64, 0.02, 0.33, 0.55]
 
 
-def main():
-    data = CanTherm()
-    inputFile = open(sys.argv[1], 'r')
-    oFile = open('output', 'w')
-    readGeomFc.readInputFile(inputFile, data)
+    def run(self):
+        inputFile = open(sys.argv[1], 'r')
 
-    data.Entropy = len(data.MoleculeList) * len(data.Temp) * [0.0]
-    data.Cp = len(data.MoleculeList) * len(data.Temp) * [0.0]
-    data.Thermal = len(data.MoleculeList) * len(data.Temp) * [0.0]
-    data.Partition = len(data.MoleculeList) * len(data.Temp) * [1.0]
-    Entropy = data.Entropy
-    Cp = data.Cp
-    Thermal = data.Thermal
-    Partition = data.Partition
+        # Read input file and calculate thermo
+        readGeomFc.readInputFile(inputFile, self)
 
-    for i in range(len(data.MoleculeList)):
-        molecule = data.MoleculeList[i]
-        oFile.write('Molecule ' + str(i + 1) + ':\n')
-        oFile.write('-----------\n\n')
-        # molecule.printData(oFile)
-
-        oFile.write('\nThermodynamic Data\n')
-
-        Temp = data.Temp
-        # translation
-        (ent, cp, dh) = molecule.getTranslationThermo(oFile, data.Temp)
-        for j in range(len(Temp)):
-            Entropy[i * len(Temp) + j] += ent[j]
-            Cp[i * len(Temp) + j] += cp[j]
-
-        # vibrational
-        (ent, cp, dh, q) = molecule.getVibrationalThermo(
-            oFile, data.Temp, data.scale)
-        for j in range(len(Temp)):
-            Entropy[i * len(Temp) + j] += ent[j]
-            Cp[i * len(Temp) + j] += cp[j]
-            Thermal[i * len(Temp) + j] += dh[j]
-
-        # Internal rotational
-        # if molecule.numRotors != 0:
-        #     (ent, cp, dh, q) = molecule.getIntRotationalThermo_Q(oFile, data.Temp)
-        #     for j in range(len(Temp)):
-        #         Entropy[i * len(Temp) + j] += ent[j]
-        #         Cp[i * len(Temp) + j] += cp[j]
-        #         Thermal[i * len(Temp) + j] += dh[j]
-
-        test = []
-        if molecule.numRotors != 0:
-            for rotor in molecule.rotors:
-                for T in data.Temp:
-                    q_ir, s_ir, h_ir, cp_ir = rotor.calculate_thermo(T,harmonic=False)
-                    test.append(cp_ir)
-
-
-        # External rotational
-        (ent, cp, dh) = molecule.getExtRotationalThermo(oFile, data.Temp)
-        for j in range(len(Temp)):
-            Entropy[i * len(Temp) + j] += ent[j]
-            Cp[i * len(Temp) + j] += cp[j]
-            Thermal[i * len(Temp) + j] += dh[j]
-
-        for j in range(len(Temp)):
-            Entropy[i * len(Temp) + j] += R_kcal * math.log(molecule.nelec)
-
-        if i == 0: molecule.print_thermo_contributions(oFile,Temp,Entropy,Cp,Thermal)
-
-        # TODO Test this block and make sure see if it's even executing
-        H = molecule.Energy
-        atoms = readGeomFc.getAtoms(molecule.Mass)
-        atomsH = 0.0
-        if molecule.Etype == 'cbsqb3':
-            atomE = data.atomEcbsqb3
-        if molecule.Etype == 'g3':
-            atomE = data.atomEg3
-        if molecule.Etype == 'ccsdtf12':
-            atomE = data.atomEccsdtf12
-        if molecule.Etype == 'DF-LUCCSD(T)-F12':
-            atomE = data.atomEccsdt_f12_tz
-        if molecule.Etype == 'ub3lyp':
-            atomE = data.atomEub3lyp
-        # for atom in atoms:
-        #     H -= atomE[atom]
-        #     atomsH += data.atomH[atom]
-        # H = H * ha_to_kcal + atomsH
-
-        # if molecule.Etype == 'cbsqb3':
-        #     b = 0
-        #     for bonds in molecule.bonds:
-        #         H += bonds * data.bondC[b]
-        #         b += 1
+        #     # TODO Test this block and make sure see if it's even executing
+        #     H = molecule.Energy
+        #     atoms = readGeomFc.getAtoms(molecule.Mass)
+        #     atomsH = 0.0
+        #     if molecule.Etype == 'cbsqb3':
+        #         atomE = data.atomEcbsqb3
+        #     if molecule.Etype == 'g3':
+        #         atomE = data.atomEg3
+        #     if molecule.Etype == 'ccsdtf12':
+        #         atomE = data.atomEccsdtf12
+        #     if molecule.Etype == 'DF-LUCCSD(T)-F12':
+        #         atomE = data.atomEccsdt_f12_tz
+        #     if molecule.Etype == 'ub3lyp':
+        #         atomE = data.atomEub3lyp
+        #     # for atom in atoms:
+        #     #     H -= atomE[atom]
+        #     #     atomsH += data.atomH[atom]
+        #     # H = H * ha_to_kcal + atomsH
         #
-        # # TODO What's going on here
-        # H += Thermal[i * len(Temp) + 0]
-        # print('%12.2f' % H + '%12.2f' % Entropy[i * len(Temp) + 0])
-        # for c in range(1, 8):
-        #     print('%12.2f' % Cp[i * len(Temp) + c]),
-        # print('\n')
+        #     # if molecule.Etype == 'cbsqb3':
+        #     #     b = 0
+        #     #     for bonds in molecule.bonds:
+        #     #         H += bonds * data.bondC[b]
+        #     #         b += 1
+        #     #
+        #     # # TODO What's going on here
+        #     # H += Thermal[i * len(Temp) + 0]
+        #     # print('%12.2f' % H + '%12.2f' % Entropy[i * len(Temp) + 0])
+        #     # for c in range(1, 8):
+        #     #     print('%12.2f' % Cp[i * len(Temp) + c]),
+        #     # print('\n')
+        #
+
+        # Calculate Kinetics
+        if len(self.MoleculeList) == 1:
+            return
+
+        self.rx = kinetics.Reaction(self.MoleculeList[0], self.MoleculeList[1],
+            self.Temp, tunneling="Wigner")
+        self.rx.fit_arrhenius()
+        # self.rx.print_arrhenius()
+
+        # Write to output file
+        self.write_output()
 
 
 
-    if len(data.MoleculeList) == 1:
-        return
 
-    rx = kinetics.Reaction(data.MoleculeList[0], data.MoleculeList[1], Temp, tunneling="Wigner")
-    # rx.calc_TST_rates()
-    rx.fit_arrhenius()
-    # rx.print_arrhenius()
-    for i in range(len(Temp)):
-        print("%i\t%e"%(Temp[i],rx.rates[i]))
+    def write_output(self):
+        '''
+        Write the output file to self.output
+        '''
 
-    # # fit the rate coefficient
-    # A = matrix(zeros((len(Temp), 3), dtype=float))
-    # y = matrix(zeros((len(Temp), 1), dtype=float))
-    #
-    # rate = [0.0] * len(Temp)
-    # kappa = []
-    # for j in range(len(Temp)):
-    #     if (data.ReacType == 'Unimol'):
-    #         rate[j] = (kb * Temp[j] / h)
-    #         rate[j] *= math.exp((Entropy[len(Temp) + j] - Entropy[j]) / R)
-    #         rate[j] *= math.exp(-(data.MoleculeList[1].Energy - data.MoleculeList[0].Energy) * ha_to_kcal * 1.0e3 / R_kcal / Temp[j])
-    #
-    #         # kappa.append( wigner_correction(Temp[j], data.MoleculeList[1].imagFreq, data.scale ) )
-    #         #
-    #         # rate[j] *= kappa[j]
-    #         A[j, :] = mat([1.0, math.log(Temp[j]), -1.0 / R_kcal / Temp[j]])
-    #         y[j] = log(rate[j])
-    #
-    # b = linalg.inv(transpose(A) * A) * (transpose(A) * y)
-    #
-    # # Write the reaction rate data
-    # oFile.write('\n\nRate Data\n')
-    # oFile.write('r = A*(T/1000)^n*exp(-Ea/R/T)' + '%12.2e' % (exp(b[0]) * 1000.0**float(b[1])) + '%10.2f' % b[1] + '%12.2f' % (b[2] / 1.0e3) +
-    #             '\n') #TODO what is this?
-    # oFile.write('r = A*T^n*exp(-Ea/R/T)' + '%12.2e' %
-    #             (exp(b[0])) + '%10.2f' % b[1] + '%12.2f' % (b[2] / 1.0e3) + '\n\n')
-    #
-    # oFile.write('%12s' % 'Temp. (K)' + '%16s' % 'Rate (s^-1)'+ '%16s' % 'FitRate (s^-1)'  + '%12s\n' % 'Kappa')
-    #
-    # for j in range(len(Temp)):
-    #     fitrate = exp(b[0]) * Temp[j]**float(b[1]) * \
-    #         exp(-b[2] / R_kcal / Temp[j])
-    #     oFile.write('%12.2f' % Temp[j] + '%16.2e' %
-    #                 rate[j] + '%16.2e' % fitrate + '%12.4f\n' % kappa[j])
-    # oFile.write('\n\n')
+        oFile = open(self.out_file, 'w')
+        oFile.write(LICENSE + '\n\n\n\n')
+        Temp = self.Temp
 
-    # for i in range(len(Temp)):
-    #     T = Temp[i]
-    #     Q_react = data.MoleculeList[0].calculate_Q(T)
-    #     Q_TS = data.MoleculeList[1].calculate_Q(T)
-    #
-    #     k_test = (kb * T/ h) * (Q_TS/ Q_react) * math.exp(-(data.MoleculeList[1].Energy-data.MoleculeList[0].Energy) * ha_to_kcal * 1.e3 / R_kcal / T)
-    #     print("Test rate constant for T=%i \t %e" % (T,k_test*kappa[i]))
+        # Write Molecular Data
+        hr = '*'*80 + '\n\n'
+        spacing = ' '*30
+        oFile.write(hr + spacing + 'Molecule Properties\n\n' + hr)
 
-    oFile.close()
+        for molecule in self.MoleculeList:
+            mol_header = 'Molecule %i\n' % (self.MoleculeList.index(molecule) + 1)
+            mol_header += '-'*(len(mol_header)-1) + '\n\n'
+            oFile.write(mol_header)
+            molecule.print_properties(oFile)
+
+        oFile.write('\n\n')
+
+        # Write themo properties
+        hr = '*'*80 + '\n\n'
+        spacing = ' '*28
+        oFile.write(hr + spacing + 'Thermodynamic Properties\n\n' + hr)
+
+        for molecule in self.MoleculeList:
+            mol_header = 'Molecule %i\n' % (self.MoleculeList.index(molecule) + 1)
+            mol_header += '-'*(len(mol_header)-1) + '\n\n'
+            oFile.write(mol_header)
+            molecule.calculate_all_thermo(Temp,oFile)
+
+
+        # Write Kinetics (if applicable)
+        hr = '*'*80 + '\n\n'
+        spacing = ' '*31
+        oFile.write(hr + spacing + 'Kinetic Properties\n\n' + hr)
+
+
+        self.rx.print_properties(oFile)
+
+        # Print goodbye
+        oFile.write('\n\n\n')
+        goodbye = ' '*19 + 'CANTHERM OUTPUT COMPLETE. HAVE A GOOD DAY\n'
+        goodbye = '*'*80 + '\n\n' + goodbye + '\n'  + '*'*80 + '\n'
+        oFile.write(goodbye)
+        oFile.close()
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    data = CanTherm()
+    data.run()

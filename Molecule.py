@@ -1,19 +1,25 @@
 #!/usr/bin/env python
 '''
-    Copyright (C) 2018, Sandeep Sharma and James E. T. Smith
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+********************************************************************************
+*                                                                              *
+*    CANTHERM                                                                  *
+*                                                                              *
+*    Copyright (C) 2018, Sandeep Sharma and James E. T. Smith                  *
+*                                                                              *
+*    This program is free software: you can redistribute it and/or modify      *
+*    it under the terms of the GNU General Public License as published by      *
+*    the Free Software Foundation, either version 3 of the License, or         *
+*    (at your option) any later version.                                       *
+*                                                                              *
+*    This program is distributed in the hope that it will be useful,           *
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *
+*    GNU General Public License for more details.                              *
+*                                                                              *
+*    You should have received a copy of the GNU General Public License         *
+*    along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
+*                                                                              *
+********************************************************************************
 '''
 
 import pdb
@@ -33,7 +39,8 @@ class Molecule:
     # geom, Mass, Fc, linearity, Energy, Etype, extSymm, nelec, rotors,
     # potentialFile, Iext, ebase, bonds
 
-    def __init__(self, file, isTS):
+    def __init__(self, in_file, isTS, scale):
+        self.input_file = in_file
         self.rotors = []
         self.Freq = []
         self.Harmonics = []
@@ -41,14 +48,24 @@ class Molecule:
         self.bonds = []
         self.Etype = ''
         self.TS = isTS
+        self.scale = scale
+        self.read_input()
+        # self.print_properties() # TODO
+
+    def read_input(self):
+        '''
+        Reads the input file and associated log (or other output format) files.
+        '''
+
+        file = self.input_file
         line = readGeomFc.readMeaningfulLine(file)
         self.linearity = line.split()[0].upper
 
-# read linearity
+        # read linearity
         line = readGeomFc.readMeaningfulLine(file)
         linearlity = line.split()[0].upper
 
-# read geometry
+        # read geometry
         line = readGeomFc.readMeaningfulLine(file)
         tokens = line.split()
         if tokens[0].upper() != 'GEOM':
@@ -94,7 +111,7 @@ class Molecule:
 
         self.calculateMomInertia()
 
-# read force constant or frequency data
+        # read force constant or frequency data
         line = readGeomFc.readMeaningfulLine(file)
         tokens = line.split()
         if tokens[0].upper() == 'FORCEC' and tokens[1].upper() == 'FILE':
@@ -136,7 +153,7 @@ class Molecule:
             print('Frequency information cannot be read, check input file again')
             exit()
 
-# read energy
+        # read energy
         line = readGeomFc.readMeaningfulLine(file)
         tokens = line.split()
         if (tokens[0].upper() != 'ENERGY'):
@@ -167,14 +184,14 @@ class Molecule:
             print('Cannot read the Energy')
             exit()
 
-# read external symmetry
+        # read external symmetry
         line = readGeomFc.readMeaningfulLine(file)
         if (line.split()[0].upper() != 'EXTSYM'):
             print('Extsym keyword required')
             exit()
         self.extSymm = int(line.split()[1])
 
-# read electronic degeneracy
+        # read electronic degeneracy
         line = readGeomFc.readMeaningfulLine(file)
         if (line.split()[0].upper() != 'NELEC'):
             print('Nelec keyword required')
@@ -278,6 +295,7 @@ class Molecule:
             # This will be removed from the frequencies list.
             line = readGeomFc.readMeaningfulLine(file)
             tokens = line.split()
+            # print(len(tokens))
 
             if tokens[0].upper() == 'ROTORFREQ' and \
                 len(tokens) - 1 != self.numRotors:
@@ -288,6 +306,7 @@ class Molecule:
             for i in range(self.numRotors):
                 print("Removing hindered rotor frequency %s cm^-1 from the list of vibrational frequencies." % tokens[i+1])
                 rm_idx = self.Freq.index(float(tokens[i+1]))
+                self.hindFreq.append(self.Freq[rm_idx]) # Keep track of them
                 del self.Freq[rm_idx]
 
             # Create rotor object for each hindered rotor
@@ -308,7 +327,397 @@ class Molecule:
         # for bond in tokens:
         #     self.bonds.append(float(bond))
 
-#*************************************************************************
+
+    ############################################################################
+    ### Primary Functions ######################################################
+    ############################################################################
+    def calculateMomInertia(self):
+        geom = self.geom
+        Mass = self.Mass
+        # change coordinates to have cm
+        cm = matrix('0.0 0.0 0.0')
+
+        for i in range(Mass.size):
+            cm = cm + Mass[i] * geom[i, :]
+
+        cm = cm / sum(Mass)
+
+        for i in range(Mass.size):
+            geom[i, :] = geom[i, :] - cm
+
+
+        # calculate moments of inertia
+        I = matrix(zeros((3, 3), dtype=double))
+        x = array(geom[:, 0])
+        y = array(geom[:, 1])
+        z = array(geom[:, 2])
+        I[0, 0] = sum(array(Mass) * (y * y + z * z))
+        I[1, 1] = sum(array(Mass) * (x * x + z * z))
+        I[2, 2] = sum(array(Mass) * (x * x + y * y))
+        I[0, 1] = I[1, 0] = -sum(array(Mass) * x * y)
+        I[0, 2] = I[2, 0] = -sum(array(Mass) * x * z)
+        I[1, 2] = I[2, 1] = -sum(array(Mass) * z * y)
+
+        # rotate coordinate axes to be parallel to principal axes
+        (l, v) = linalg.eigh(I)
+        self.Iext = l
+
+
+
+    ############################################################################
+    def calculate_thermo(self, oFile, Temp, mode_type='trans', harmonic=False):
+        '''
+        Return the thermodynamic quantities at a given temperature for the type
+        of mode specified.
+
+        Arguments:
+
+            oFile: open file object where the program will write the data
+
+            Temp: list of temperatures in Kelvin
+
+            type: (optional) the type of target mode ('trans', 'vib', 'rot',
+                'int rot')
+
+            harmonic: boolean flag for whether or not to calculate the
+                properties harmonically for the internal rotor (only use if
+                mode_type='int rot')
+
+        Returns:
+
+            Q: list of partition functions (for mode_type='trans' this is
+                q/volume)
+
+            H: list of enthalpies in kcal/mol (no ZPE included)
+
+            Cp: list of heat capacities in cal/(mol K)
+
+            S: list of entropies in cal/(mol K)
+
+        '''
+
+        # Pint
+        if mode_type == 'trans':
+            self.print_thermo_heading(oFile,'Translational Contributions' )
+        elif mode_type == 'vib':
+            self.print_thermo_heading(oFile,'Vibrational Contributions' )
+        elif mode_type == 'rot':
+            self.print_thermo_heading(oFile,'Rotational Contributions' )
+        elif mode_type == 'int rot':
+            self.print_thermo_heading(oFile,'Int. Rotational Contributions' )
+
+
+        # Calculate the contributions at each temperature in the list
+        Q = []
+        H = []
+        Cp = []
+        S = []
+
+        for T in Temp:
+            # Ideal Gas Translational Modes
+            # See Tuckerman, Stat. Mech.: Theory and Simulation section 5.6
+            if mode_type == 'trans':
+                Q_T = np.power((2 * pi * sum(self.Mass) * kb * T)/h**2, 3./2.)
+                H_T = 5.0/2.0 * R_kcal * T
+                Cp_T = 5.0/2.0 * R_cal
+                S_T = R_cal * np.log(Q_T)
+
+            # Harmonic Oscillator Vibrational Mode
+            elif mode_type == 'vib':
+                freqs = np.array(self.Freq) * self.scale
+                Q_T = 1
+                H_T = 0
+                Cp_T = 0
+                S_T = 0
+
+                for i in range(freqs.size):
+                    ei = h * freqs[i] * c_in_cm # hv for this mode
+                    Q_T *= 1.0 / ( 1.0 - np.exp(-ei / (kb * T)) )
+                    H_T +=  ei / (np.exp(ei/(kb*T) - 1.0)) * (N_avo * j_to_cal/1e3)
+                    Cp_T += R_cal * (ei/(kb*T))**2 * np.exp(ei/(kb*T))/(np.exp(ei/(kb*T)) - 1.0)**2
+                    S_T += R_cal * np.log(Q_T) + H_T * 1e3/T
+
+            # Rigid Rotor Rotational Modes
+            elif mode_type == 'rot':
+                sigma = self.extSymm
+                Iext = self.Iext
+                Q_T = np.power(pi * Iext[0] * Iext[1] * Iext[2], 0.5)/sigma
+                Q_T *= np.power(8.0 * pi**2 * kb * T / h**2, 3./2.)
+                H_T = 3.0/2.0 * R_kcal * T
+                Cp_T = 3.0/2.0 * R_cal
+                S_T = H_T * 1e3 / T + R_cal * np.log(Q_T)
+
+
+            # Internal Rotor Torsional Modes
+            elif mode_type == 'int rot':
+                Q_T = 1
+                H_T = 0
+                Cp_T = 0
+                S_T = 0
+
+                for rotor in self.rotors:
+                    q_ir, h_ir, cp_ir, s_ir = rotor.calculate_thermo(T,
+                        harmonic=harmonic)
+                    Q_T *= q_ir
+                    H_T += h_ir
+                    Cp_T += cp_ir
+                    S_T += s_ir
+
+            Q.append(Q_T)
+            H.append(H_T)
+            Cp.append(Cp_T)
+            S.append(S_T)
+            # print("Cp %f" %Cp_T)
+        # End of loop over temperatures
+        # print(S)
+
+        # Print thermo data
+        self.print_thermo_contributions(oFile,Temp,S,Cp,H)
+        oFile.write('\n')
+
+
+        return Q, H, Cp, S
+
+
+
+    ############################################################################
+    def calculate_all_thermo(self, Temp, oFile):
+        '''
+        Calculate and write the thermodynamic properties contributions from
+        translation, vibration, rotation, and, if applicable, internal rotation.
+
+        Arguments:
+
+            Temp: list of temperatures
+
+            oFile: an open file object where the thermo properties will be
+                written
+
+        Returns:
+
+            Q: total partition function
+
+            H: total enthalpy in kcal/mol (no ZPE included)
+
+            Cp: total heat capacity in cal/(mol K)
+
+            S: total entropy in cal/(mol K)
+        '''
+
+        # Translation
+        q_tr, h_tr, cp_tr, s_tr = self.calculate_thermo(oFile, Temp,
+            mode_type='trans')
+
+        # Vibration
+        q_vib, h_vib, cp_vib, s_vib = self.calculate_thermo(oFile, Temp,
+            mode_type='vib')
+
+        # Rotation
+        q_rot, h_rot, cp_rot, s_rot = self.calculate_thermo(oFile, Temp,
+            mode_type='rot')
+
+        # Internal Rotation
+        q_ir, h_ir, cp_ir, s_ir = self.calculate_thermo(oFile, Temp,
+            mode_type='int rot')
+
+        # Combine all of the data
+        Q = [q_tr[i]*q_vib[i]*q_rot[i]*q_ir[i] for i in range(len(Temp))]
+        H = [h_tr[i]+h_vib[i]+h_rot[i]+h_ir[i] for i in range(len(Temp))]
+        Cp = [cp_tr[i]+cp_vib[i]+cp_rot[i]+cp_ir[i] for i in range(len(Temp))]
+        S = [s_tr[i]+s_vib[i]+s_rot[i]+s_ir[i] for i in range(len(Temp))]
+
+        return Q, H, Cp, S
+
+
+
+    ############################################################################
+
+    def print_thermo_heading(self, oFile, heading):
+        '''
+        Write the header the thermo contributions of a particular set of modes
+        (e.g. translationa, rotational, etc).
+
+        Arguments:
+
+            oFile: open output file object where program will write the header
+
+            heading (string): string describing the thermo contributions to be
+                written
+        '''
+
+        l = len(heading) + 4
+        symb = '-'
+        header = footer = symb * l
+        mainline = '\n%s %s %s\n' % (symb, heading, symb)
+        oFile.write(header + mainline + footer + "\n\n")
+        return
+
+
+    ############################################################################
+
+    def print_thermo_contributions(self,oFile,Temp,ent,cp,dH):
+        '''
+        Write the thermo contributions from a set of modes to the cantherm
+        output file.
+
+        Arguments:
+
+            oFile: open output file object
+
+            Temp: list of temperatures for calculated contributions
+
+            ent: entropy contributions
+
+            cp: constant pressure heat capacity contributions
+
+            dH: enthalpy contributions
+        '''
+
+        horizontal_line = '-'*12 + " "*3
+        horizontal_line *= 4
+        horizontal_line += '\n'
+
+        oFile.write(horizontal_line)
+        temp_string = 'Temp'
+        temp_units_string = 'K'
+        ent_string = 'S'
+        ent_units_string = 'cal/(mol K)'
+        cp_string = 'Cp'
+        cp_units_string = 'cal/(mol K)'
+        h_string = 'H'
+        h_units_string = 'kcal/mol'
+
+        oFile.write('{:^12}   {:^12}   {:^12}   {:^12}\n'.format(temp_string,ent_string,cp_string,h_string))
+        oFile.write('{:^12}   {:^12}   {:^12}   {:^12}\n'.format(temp_units_string,ent_units_string,cp_units_string,h_units_string))
+        oFile.write(horizontal_line)
+
+        for i in range(len(Temp)):
+            oFile.write('{:^12}'.format(Temp[i]) + "   ")
+            oFile.write('{:^12.2f}'.format(ent[i]) + "   ")
+            oFile.write('{:^12.2f}'.format(cp[i]) + "   ")
+            oFile.write('{:^12.2f}\n'.format(dH[i]))
+
+        oFile.write(horizontal_line + '\n')
+        return
+
+    ############################################################################
+    def print_properties(self, out_file):
+        '''
+        Writes the data for the molecule after fully initializing molecule obj.
+        '''
+
+        geom = self.geom
+        Mass = self.Mass
+
+        # Write coordinates with masses
+        geom_heading = 'Cartesian Geometry:\n'
+        geom_heading += '-'*(len(geom_heading)-1) + '\n\n'
+        out_file.write(geom_heading)
+
+        out_file.write('%10s' % 'Mass(amu)' + '%10s' % 'X(ang)' + '%10s' %
+                    'Y(ang)' + '%10s' % 'Z(ang)' + '\n')
+        for i in range(Mass.size):
+            out_file.write('%10.3f' % float(Mass[i]) +
+                           '%10.4f' % float(geom[i, 0]) +
+                           '%10.4f' % float(geom[i, 1]) +
+                           '%10.4f' % float(geom[i, 2]) + '\n')
+        out_file.write('\n\n')
+
+        # Write vibrational frequencies
+        vib_heading = 'Vibrational Frequencies (cm-1):\n'
+        vib_heading += '-'*(len(vib_heading)-1) + '\n\n'
+        out_file.write(vib_heading)
+
+        Freq = self.Freq
+        if self.TS:
+            out_file.write('TS Imaginary Frequency: '+str(self.imagFreq) + '\n')
+
+        for i in range(int(len(Freq) / 3) + 1):
+            for j in range(3):
+                if 3 * i + j < len(Freq):
+                    out_file.write('%10.3f' % Freq[3 * i + j])
+            out_file.write('\n')
+        out_file.write('\n\n')
+
+        # Write frequencies of hindered rotors excluded from q_vib
+        hr_vib_heading = 'Approx. Frequencies of Hindered Rotors (cm-1):\n'
+        hr_vib_heading += '-'*(len(hr_vib_heading)-1) + '\n\n'
+        out_file.write(hr_vib_heading)
+
+        for i in range(int(len(self.hindFreq) / 3) + 1):
+            for j in range(3):
+                if 3 * i + j < len(self.hindFreq):
+                    out_file.write('%10.3f' % self.hindFreq[3 * i + j])
+            out_file.write('\n')
+        out_file.write('\n\n')
+
+
+        # Write misc. properties
+        misc_heading = 'Other Properties:\n'
+        misc_heading += '-'*(len(misc_heading)-1) + '\n\n'
+        out_file.write(misc_heading)
+
+        out_file.write('External Symmetry = ' + str(self.extSymm) + '\n')
+        out_file.write('Principal Moments of Inertia = ' +
+                       '%10.3f %10.3f %10.3f \n' % (self.Iext[0],
+                                                           self.Iext[1],
+                                                           self.Iext[1]) )
+
+        out_file.write('Electronic Degeneracy = ' + str(self.nelec) + '\n\n')
+
+        # Write Rotor properties
+        for rotor in self.rotors:
+            rotor.print_properties(out_file)
+
+
+    ############################################################################
+    ### Optional Functions #####################################################
+    ############################################################################
+    def calculate_Q(self, T):
+        '''
+        DEPRECATED
+
+        For more details see "Molecular Driving Forces" by Dill Chapters 11
+        and 19.
+        '''
+
+        # Translational Contrib.
+        # TODO Assuming Unimolecular for now so it's technically per volume
+        q_tr = np.power((2 * pi * sum(self.Mass) * kb * T)/h**2, 3./2.)
+
+        # Vibrational Contrib.
+        q_vib = 1
+        for freq in self.Freq:
+            q_vib *= 1/( 1 - np.exp(-h * freq * c_in_cm/(kb * T)) )
+
+        # External Rotational Contrib.
+        # TODO Add symm. factor
+        sigma = 1
+        q_rot = np.power(pi * self.Iext[0] * self.Iext[1] * self.Iext[2], 0.5)/sigma
+        q_rot *= np.power(8.0 * pi**2 * kb * T / h**2, 3./2.)
+
+        # Internal Rotational Contrib.
+        q_ir = 1
+        s_ir = 0
+        h_ir = 0
+        cp_ir = 0
+
+        for rotor in self.rotors:
+
+            q_ir_i, s_ir_i, h_ir_i, cp_ir_i = rotor.calculate_thermo(T)
+
+            q_ir *= q_ir_i
+            s_ir += s_ir_i
+            h_ir += s_ir_i
+            cp_ir += s_ir_i
+
+        return q_tr * q_vib * q_rot * q_ir
+
+
+
+    ############################################################################
+    ### Deprecated Functions ###################################################
+    ############################################################################
 
     def getFreqFromFc(self):
         Fc = self.Fc.copy()
@@ -417,50 +826,9 @@ class Molecule:
 
         # print
 
-#*************************************************************************
-    def print_thermo_heading(self, oFile, heading):
-        l = len(heading) + 4
-        symb = '='
-        header = footer = symb * l
-        mainline = '\n%s %s %s\n' % (symb, heading, symb)
-        oFile.write(header + mainline + footer + "\n\n")
-        return
 
 
-#*************************************************************************
-
-    def print_thermo_contributions(self,oFile,Temp,ent,cp,dH):
-        # TODO Still need to check the units on these quantities
-        # horizontal_line = '===========    =========    ==========    ========\n'
-        horizontal_line = '='*12 + " "*3
-        horizontal_line *= 4
-        horizontal_line += '\n'
-
-        oFile.write(horizontal_line)
-        temp_string = 'Temp'
-        temp_units_string = 'K'
-        ent_string = 'S'
-        ent_units_string = 'cal/(mol K)'
-        cp_string = 'Cp'
-        cp_units_string = 'cal/(mol K)'
-        h_string = 'dH'
-        h_units_string = 'kcal/mol'
-
-        oFile.write('{:^12}   {:^12}   {:^12}   {:^12}\n'.format(temp_string,ent_string,cp_string,h_string))
-        oFile.write('{:^12}   {:^12}   {:^12}   {:^12}\n'.format(temp_units_string,ent_units_string,cp_units_string,h_units_string))
-        oFile.write(horizontal_line)
-
-        for i in range(len(Temp)):
-            oFile.write('{:^12}'.format(Temp[i]) + "   ")
-            oFile.write('{:^12.2f}'.format(ent[i]) + "   ")
-            oFile.write('{:^12.2f}'.format(cp[i]) + "   ")
-            oFile.write('{:^12.2f}\n'.format(dH[i]))
-
-        oFile.write(horizontal_line + '\n')
-        return
-
-#*************************************************************************
-
+    ############################################################################
     def printData(self, oFile):
         '''
         Deprecated
@@ -508,8 +876,8 @@ class Molecule:
             k = k + 1
 
 
-#*************************************************************************
 
+    ############################################################################
     def getTranslationThermo(self, oFile, Temp):
         ent = []
         cp = []
@@ -536,8 +904,9 @@ class Molecule:
 
         return ent, cp, dH
 
-#*************************************************************************
 
+
+    ############################################################################
     def getVibrationalThermo(self, oFile, Temp, scale):
         # print("SCALE: ", scale) TODO
         ent = []
@@ -604,7 +973,7 @@ class Molecule:
 
         return ent, cp, dH, parti
 
-#*************************************************************************
+    ############################################################################
 
     def getIntRotationalThermo_PG(self, oFile, Temp):
         ent = []
@@ -700,10 +1069,9 @@ class Molecule:
 
         return ent, cp, dH
 
-#**************************************************************************
 
-#*************************************************************************
 
+    ############################################################################
     def getIntRotationalThermo_Q(self, oFile, Temp):
         '''
         Deprecated
@@ -759,8 +1127,9 @@ class Molecule:
 
         return ent, cp, dH, parti
 
-#**************************************************************************
 
+
+    ############################################################################
     def calculateElevels(self):
         K = geomUtility.calculateD32(self.geom, self.Mass, self.rotors)
         E = []
@@ -786,8 +1155,9 @@ class Molecule:
             E.append(l)
         return E
 
-#**************************************************************************
 
+
+    ############################################################################
     def getExtRotationalThermo(self, oFile, Temp):
         S = []
         ent = []
@@ -808,75 +1178,3 @@ class Molecule:
 
         self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
         return ent, cp, dH
-
-
-#**************************************************************************
-    def calculateMomInertia(self):
-        geom = self.geom
-        Mass = self.Mass
-        # change coordinates to have cm
-        cm = matrix('0.0 0.0 0.0')
-
-        for i in range(Mass.size):
-            cm = cm + Mass[i] * geom[i, :]
-
-        cm = cm / sum(Mass)
-
-        for i in range(Mass.size):
-            geom[i, :] = geom[i, :] - cm
-
-
-# calculate moments of inertia
-        I = matrix(zeros((3, 3), dtype=double))
-        x = array(geom[:, 0])
-        y = array(geom[:, 1])
-        z = array(geom[:, 2])
-        I[0, 0] = sum(array(Mass) * (y * y + z * z))
-        I[1, 1] = sum(array(Mass) * (x * x + z * z))
-        I[2, 2] = sum(array(Mass) * (x * x + y * y))
-        I[0, 1] = I[1, 0] = -sum(array(Mass) * x * y)
-        I[0, 2] = I[2, 0] = -sum(array(Mass) * x * z)
-        I[1, 2] = I[2, 1] = -sum(array(Mass) * z * y)
-
-# rotate coordinate axes to be parallel to principal axes
-        (l, v) = linalg.eigh(I)
-        self.Iext = l
-
-#**************************************************************************
-    def calculate_Q(self, T):
-        '''
-        For more details see "Molecular Driving Forces" by Dill Chapters 11
-        and 19.
-        '''
-
-        # Translational Contrib.
-        # TODO Assuming Unimolecular for now so it's technically per volume
-        q_tr = np.power((2 * pi * sum(self.Mass) * kb * T)/h**2, 3./2.)
-
-        # Vibrational Contrib.
-        q_vib = 1
-        for freq in self.Freq:
-            q_vib *= 1/( 1 - np.exp(-h * freq * c_in_cm/(kb * T)) )
-
-        # External Rotational Contrib.
-        # TODO Add symm. factor
-        sigma = 1
-        q_rot = np.power(pi * self.Iext[0] * self.Iext[1] * self.Iext[2], 0.5)/sigma
-        q_rot *= np.power(8 * pi**2 * kb * T / h**2, 3./2.)
-
-        # Internal Rotational Contrib.
-        q_ir = 1
-        s_ir = 0
-        h_ir = 0
-        cp_ir = 0
-
-        for rotor in self.rotors:
-            q_ir_i, s_ir_i, h_ir_i, cp_ir_i = rotor.calculate_thermo(T)
-            q_ir *= q_ir_i
-            s_ir += s_ir_i
-            h_ir += s_ir_i
-            cp_ir += s_ir_i
-
-        # print('Temp = %i \t Q_ir: %e\t S_ir: %e\t H_ir: %e\t Cp_ir: %e' % (T, q_ir, s_ir, h_ir, cp_ir))
-        # print( "Tr: %e\t Vib: %e\t Rot: %e\t IR:%e" % (q_tr, q_vib, q_rot, q_ir) )
-        return q_tr * q_vib * q_rot

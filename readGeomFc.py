@@ -2,20 +2,26 @@
 # takes the file as an argument and then reads the geometry and lower triangular part
 # of the force constant matrix and the Atomic mass vector
 '''
-    Copyright (C) 2018, Sandeep Sharma and James E. T. Smith
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+********************************************************************************
+*                                                                              *
+*    CANTHERM                                                                  *
+*                                                                              *
+*    Copyright (C) 2018, Sandeep Sharma and James E. T. Smith                  *
+*                                                                              *
+*    This program is free software: you can redistribute it and/or modify      *
+*    it under the terms of the GNU General Public License as published by      *
+*    the Free Software Foundation, either version 3 of the License, or         *
+*    (at your option) any later version.                                       *
+*                                                                              *
+*    This program is distributed in the hope that it will be useful,           *
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *
+*    GNU General Public License for more details.                              *
+*                                                                              *
+*    You should have received a copy of the GNU General Public License         *
+*    along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
+*                                                                              *
+********************************************************************************
 '''
 
 import os
@@ -95,9 +101,9 @@ def readInputFile(file, data):
 
     for i in range(numMol):
         if data.ReacType == 'Unimol' and i == 1 or data.ReacType == 'Bimol' and i == 2:
-            molecule = Molecule(file, True)
+            molecule = Molecule(file, True, data.scale)
         else:
-            molecule = Molecule(file, False)
+            molecule = Molecule(file, False, data.scale)
         data.MoleculeList.append(molecule)
     return
 
@@ -422,6 +428,8 @@ def readEnergy(file, string):
     # Molpro File
     elif tokens[-1] == 'res':
         if string == 'DF-LUCCSD(T)-F12':
+            print(re.findall('DF-LUCCSD\(T\)-F12\/cc-pVTZ-F12 energy=' + \
+                                 ' \s*([\-0-9.]+)', com))
             Energy = re.search('DF-LUCCSD\(T\)-F12\/cc-pVTZ-F12 energy=' + \
                                  ' \s*([\-0-9.]+)', com).group(1)
     return float(Energy)

@@ -1,19 +1,25 @@
 #!/usr/bin/env python
 '''
-    Copyright (C) 2018, Sandeep Sharma and James E. T. Smith
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+********************************************************************************
+*                                                                              *
+*    CANTHERM                                                                  *
+*                                                                              *
+*    Copyright (C) 2018, Sandeep Sharma and James E. T. Smith                  *
+*                                                                              *
+*    This program is free software: you can redistribute it and/or modify      *
+*    it under the terms of the GNU General Public License as published by      *
+*    the Free Software Foundation, either version 3 of the License, or         *
+*    (at your option) any later version.                                       *
+*                                                                              *
+*    This program is distributed in the hope that it will be useful,           *
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *
+*    GNU General Public License for more details.                              *
+*                                                                              *
+*    You should have received a copy of the GNU General Public License         *
+*    along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
+*                                                                              *
+********************************************************************************
 '''
 
 ### General Modules ###
@@ -89,8 +95,10 @@ class Rotor:
         # self.plot_rotational_pes()
         self.calc_reduced_moment()
         self.calc_e_levels()
-    ### Mandatory Functions ###
 
+    ######################################################################
+    ### Mandatory Functions ##############################################
+    ######################################################################
     def load_atom_lists(self):
         '''
         Use bonds to assign which atoms are a part of the rotor.
@@ -169,7 +177,7 @@ class Rotor:
         return
 
 
-
+    ######################################################################
     def read_scan_data(self, file_name):
         '''
         Read the atoms in the dihedral angle and the energies of the 1-D PES
@@ -217,16 +225,11 @@ class Rotor:
                     break
 
         # TODO Clean this up and just use self.* throughout function
-        print(energy_offset)
         self.energy_offset = energy_offset * ha_to_j
-        # print("OFFSET (J): %e" %(self.energy_offset * N_avo/1e3))
-        # exit(0)
         self.energies = np.array(energies)*ha_to_j - self.energy_offset # J
-        # self.energies -= np.min(self.energies)
 
 
-
-
+    ######################################################################
     def fit_potential(self, a=None, e=None, n_term=15):
         '''
         A is the matrix of fourier terms. E are the energies. N_term is the
@@ -260,7 +263,7 @@ class Rotor:
             self.pot_coeffs[1,i] = pot_coeffs[2*i+1] # b_k coeffs
 
 
-
+    ######################################################################
     def calc_reduced_moment(self):
         '''
         Calculate the reduced moment of inertia for the rotor.
@@ -309,7 +312,7 @@ class Rotor:
         self.i_red /= N_avo
 
 
-
+    ######################################################################
     def calc_e_levels(self):
         '''
         Calculate the hindered rotor energies for the rotor object.
@@ -342,23 +345,30 @@ class Rotor:
                     ham_ir[n+m,n+m+k] -= 1j * 0.5 * coeffs[1,k-1] # b_k term
 
         self.e_levels, _ = la.eigh(ham_ir)
-        plt.figure()
-        v_fit = self.calculate_potential()
-        v_fit = np.roll(v_fit, 100)
-        th = np.linspace(0,2*np.pi, num=v_fit.size)
-        plt.plot(th, v_fit)
-
-        for i in range(100):
-            plt.plot(th, [self.e_levels[i]]*th.size)
-        # plt.show()
-        # exit(0)
 
 
-    ### Optional Functions ###
-
+    ######################################################################
+    ### Optional Functions ###############################################
+    ######################################################################
     def calculate_thermo(self, t, harmonic=False):
         '''
-        Return the partition function, entropy, enthalpy, and heat capacity.
+        Calculate the contributions to the thermodynamic from the rigid rotor.
+
+        Arguments:
+            t: temperature in K
+
+            harmonic: boolean flag for whether or not to calculate the
+                properties harmonically
+
+        Returns:
+            q_ir: partition function
+
+            h_ir: enthalpy in kcal/mol
+
+            cp_ir: heat capacity in cal/(mol K)
+
+            s_ir: entropy in cal/(mol K)
+
 
         TODO: Need to add degeneracy?
         '''
@@ -369,39 +379,31 @@ class Rotor:
             mu = c_in_cm * self.v_ho
             eps = np.array([h*mu*(n+0.5) for n in range(10000)])
 
-        # print(eps)
-        # mu = 88.2 * c_in_cm # TODO
         zpe = eps[0] * N_avo/ 1.0e3/ kcal_to_kj
         eps -= eps[0] # Shift by ZPE
         eps *= N_avo # Convert to molar quantities (J/mol)
-        # print(eps)
 
         bw = np.exp(-eps /(R * t)) # Boltzmann weights
-        # print(-eps/(R*t))
-        print("Temp %i" % t)
 
         # Partition Function
         q_ir = np.sum(bw)
         q_ir /= self.sym
-        print("Q %e" % q_ir)
-        # print("Q_exact %f" % ( 1/( 1 - np.exp(-h*mu/(kb*t)) )) ) # TODO
 
         # Enthalpy
         h_ir = np.sum(eps * bw) / np.sum(bw) /1.0e3 /kcal_to_kj # kcal/mol
-        print("H %e" % h_ir)
-        # print("ZPE %f" % zpe)
 
         # Heat Capacity
-        cp_ir = (np.sum(bw) * np.sum(eps*eps*bw) - np.sum(eps*bw)**2)/ (np.sum(bw)**2 * R * t**2 * cal_to_j) # cal/(mol K)
-        print("Cp %e"%cp_ir)
+        cp_ir = (np.sum(bw) * np.sum(eps*eps*bw) - np.sum(eps*bw)**2)/ \
+            (np.sum(bw)**2 * R * t**2 * cal_to_j) # cal/(mol K)
+        # print("T %i \t Cp_ir %f" %(t,cp_ir))
 
         # Entropy
-        s_ir = (np.sum(eps*bw)/np.sum(bw) / t + np.log(q_ir) * R )/ cal_to_j # cal/(mol K)
-        print("S %e\n" % s_ir)
+        s_ir = (np.sum(eps*bw)/np.sum(bw) / t + \
+            np.log(q_ir) * R )/ cal_to_j # cal/(mol K)
 
-        return q_ir, s_ir, h_ir, cp_ir
+        return q_ir, h_ir, cp_ir, s_ir
 
-
+    ######################################################################
     def plot(self):
         '''
         Plot the rotors and highlight them.
@@ -459,7 +461,7 @@ class Rotor:
         plt.show()
 
 
-
+    ######################################################################
     def write_potential_to_file(self, energy_offset, energies, file_name):
         pot_file_header = "# 1-D Scan of Total Energy\n#\n# %8s\t%16s\n"%('Step Number','Energy (Ha)')
         with open(file_name, 'w') as f:
@@ -470,7 +472,7 @@ class Rotor:
                 i += 1
 
 
-
+    ######################################################################
     def plot_rotational_pes(self, fitted=True, n_fit=100):
         '''
         Plot the 1-D Rotor PES.
@@ -490,7 +492,7 @@ class Rotor:
 
 
 
-
+    ######################################################################
     def calculate_potential(self, th=None, n_fit=1000 ):
         '''
         Calculate the fitted potential using the pot_coeffs array.
@@ -511,9 +513,48 @@ class Rotor:
 
         return v_fit
 
+    ######################################################################
+    def print_properties(self, out_file):
+        '''
+        Write the properties of the rotors the specifies out_file.
+
+        Arguments:
+
+            out_file: open output file object to write the properties to
+        '''
+
+        # Write header
+        header = 'Hindered Rotor with Harmonic Freq: %8.2f\n' % self.v_ho
+        header += '-'*(len(header)-1) + '\n\n'
+        out_file.write(header)
+
+        # Print atoms in each top
+        out_file.write('    Pivot atoms: %i %i\n' % (self.pivot1, self.pivot2))
+        out_file.write('    Atoms in top 1: ')
+        for atom in self.alist1: out_file.write('%i ' % atom)
+        out_file.write('\n')
+        out_file.write('    Atoms in top 2: ')
+        for atom in self.alist2: out_file.write('%i ' % atom)
+        out_file.write('\n\n')
+
+        # Fourier Series coefficients
+        out_file.write('    Fourier series coefficients (J):\n')
+        out_file.write('    V_0 = %8.3e\n' % self.v0_coeff)
+        out_file.write('    %16s %16s\n' % ('Cosine Coeffs.', 'Sine Coeffs.'))
+        for i in range(self.pot_coeffs[0].size):
+            out_file.write('    %16.3e %16.3e\n' % (self.pot_coeffs[0,i],
+                                                self.pot_coeffs[1,i]))
+        out_file.write('\n\n')
+
+        # Reduced moment of inertia
+        out_file.write('    Reduced moment of inertia (kg*m^2): %8.3e' %
+                       self.i_red)
+        out_file.write('\n\n')
 
 
-    ### Deprecated ###
+    ############################################################################
+    ### Deprecated #############################################################
+    ############################################################################
     def getMoments(self, geom, Mass):
         geomTemp = geom.copy()
 
