@@ -192,8 +192,8 @@ def readGeom(file):
         if (lines[k].startswith(" ------------")):
             stillRead = False
 
-    geom = matrix(array(zeros((len(geomLines), 3), dtype=float)))
-    Mass = matrix(array(zeros((len(geomLines), 1), dtype=float)))
+    geom = np.zeros((len(geomLines),3))
+    Mass = np.zeros((len(geomLines)))
 
     for j in range(len(geomLines)):
         line = geomLines[j]
@@ -473,7 +473,7 @@ def getNum(Result, id):
 
 
 def getAtoms(Mass):
-    atoms = len(Mass) * ['']
+    atoms = Mass.size * ['']
     j = 0
     for m in Mass:
         if (int(m) == 12):

@@ -44,3 +44,4 @@ cal_to_j = 4.184 # J/cal
 j_to_cal = 1/cal_to_j # cal/J
 ha_to_j = 4.359744650e-18 # J/ha
 # ha_to_kj = ha_to
+b0_to_m = 5.29177e-11 # bohr/m

@@ -194,6 +194,8 @@ class Rotor:
         with open(file_name, 'r') as f:
             lines = f.readlines()
 
+            # print(er.findall())
+
             parsing_rotor = False #Boolean for parsing PES energy data
 
             for line in lines:

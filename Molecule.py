@@ -332,35 +332,36 @@ class Molecule:
     ### Primary Functions ######################################################
     ############################################################################
     def calculateMomInertia(self):
-        geom = self.geom
-        Mass = self.Mass
-        # change coordinates to have cm
-        cm = matrix('0.0 0.0 0.0')
+        geom = self.geom.copy()
+        Mass = self.Mass.copy()
+        geom /= 1e10
+        Mass /= (N_avo * 1e3)
+
+        # change coordinates to have center of mass
+        cm = np.array([0,0,0])
 
         for i in range(Mass.size):
             cm = cm + Mass[i] * geom[i, :]
 
-        cm = cm / sum(Mass)
-
-        for i in range(Mass.size):
-            geom[i, :] = geom[i, :] - cm
-
+        cm = cm / np.sum(Mass)
+        geom -= cm
 
         # calculate moments of inertia
-        I = matrix(zeros((3, 3), dtype=double))
-        x = array(geom[:, 0])
-        y = array(geom[:, 1])
-        z = array(geom[:, 2])
-        I[0, 0] = sum(array(Mass) * (y * y + z * z))
-        I[1, 1] = sum(array(Mass) * (x * x + z * z))
-        I[2, 2] = sum(array(Mass) * (x * x + y * y))
-        I[0, 1] = I[1, 0] = -sum(array(Mass) * x * y)
-        I[0, 2] = I[2, 0] = -sum(array(Mass) * x * z)
-        I[1, 2] = I[2, 1] = -sum(array(Mass) * z * y)
+        I = np.zeros((3, 3))
+        x = geom[:, 0]
+        y = geom[:, 1]
+        z = geom[:, 2]
+
+        I[0, 0] = np.sum( Mass * (y * y + z * z) )
+        I[1, 1] = np.sum( Mass * (x * x + z * z) )
+        I[2, 2] = np.sum( Mass * (x * x + y * y) )
+        I[0, 1] = I[1, 0] = -np.sum( Mass * x * y )
+        I[0, 2] = I[2, 0] = -np.sum( Mass * x * z )
+        I[1, 2] = I[2, 1] = -np.sum( Mass * z * y )
 
         # rotate coordinate axes to be parallel to principal axes
-        (l, v) = linalg.eigh(I)
-        self.Iext = l
+        (l, v) = linalg.eig(I)
+        self.Iext = l # in kg * m^2
 
 
 
@@ -417,7 +418,10 @@ class Molecule:
             # Ideal Gas Translational Modes
             # See Tuckerman, Stat. Mech.: Theory and Simulation section 5.6
             if mode_type == 'trans':
-                Q_T = np.power((2 * pi * sum(self.Mass) * kb * T)/h**2, 3./2.)
+                V = 0.0224 / N_avo # m^3 volume of one molecule of ideal gas at
+                                   # 1 atm #TODO
+                mass = sum(self.Mass) / 1e3 / N_avo # Mass in kg of molecule
+                Q_T = np.power((2 * pi * mass * kb * T)/h**2, 3./2.) * V
                 H_T = 5.0/2.0 * R_kcal * T
                 Cp_T = 5.0/2.0 * R_cal
                 S_T = R_cal * np.log(Q_T)
@@ -431,11 +435,12 @@ class Molecule:
                 S_T = 0
 
                 for i in range(freqs.size):
-                    ei = h * freqs[i] * c_in_cm # hv for this mode
+                    ei = h * freqs[i] * c_in_cm # hv for this mode in J
                     Q_T *= 1.0 / ( 1.0 - np.exp(-ei / (kb * T)) )
-                    H_T +=  ei / (np.exp(ei/(kb*T) - 1.0)) * (N_avo * j_to_cal/1e3)
+                    H_T +=  ei / (np.exp(ei/(kb*T))-1.0) * (N_avo * j_to_cal/1e3)
                     Cp_T += R_cal * (ei/(kb*T))**2 * np.exp(ei/(kb*T))/(np.exp(ei/(kb*T)) - 1.0)**2
                     S_T += R_cal * np.log(Q_T) + H_T * 1e3/T
+                    # S_T += R_cal * ((ei/(kb*T))/(np.exp(ei/(kb*T)) - 1.0) + np.log(Q_T))
 
             # Rigid Rotor Rotational Modes
             elif mode_type == 'rot':
@@ -443,6 +448,7 @@ class Molecule:
                 Iext = self.Iext
                 Q_T = np.power(pi * Iext[0] * Iext[1] * Iext[2], 0.5)/sigma
                 Q_T *= np.power(8.0 * pi**2 * kb * T / h**2, 3./2.)
+                # print(Q_T)
                 H_T = 3.0/2.0 * R_kcal * T
                 Cp_T = 3.0/2.0 * R_cal
                 S_T = H_T * 1e3 / T + R_cal * np.log(Q_T)
@@ -525,6 +531,9 @@ class Molecule:
         H = [h_tr[i]+h_vib[i]+h_rot[i]+h_ir[i] for i in range(len(Temp))]
         Cp = [cp_tr[i]+cp_vib[i]+cp_rot[i]+cp_ir[i] for i in range(len(Temp))]
         S = [s_tr[i]+s_vib[i]+s_rot[i]+s_ir[i] for i in range(len(Temp))]
+
+        self.print_thermo_heading(oFile, 'Total Thermo. Contributions')
+        self.print_thermo_contributions(oFile, Temp, S, Cp, H)
 
         return Q, H, Cp, S
 
@@ -657,11 +666,11 @@ class Molecule:
         misc_heading += '-'*(len(misc_heading)-1) + '\n\n'
         out_file.write(misc_heading)
 
+        out_file.write('Energy = %10.3e kcal/mol\n' % (self.Energy*ha_to_kcal))
         out_file.write('External Symmetry = ' + str(self.extSymm) + '\n')
+        Iext = self.Iext.copy() * 1e23 * N_avo
         out_file.write('Principal Moments of Inertia = ' +
-                       '%10.3f %10.3f %10.3f \n' % (self.Iext[0],
-                                                           self.Iext[1],
-                                                           self.Iext[1]) )
+                       '%10.3f %10.3f %10.3f \n' % (Iext[0],Iext[1],Iext[2]) )
 
         out_file.write('Electronic Degeneracy = ' + str(self.nelec) + '\n\n')
 
@@ -675,7 +684,6 @@ class Molecule:
     ############################################################################
     def calculate_Q(self, T):
         '''
-        DEPRECATED
 
         For more details see "Molecular Driving Forces" by Dill Chapters 11
         and 19.

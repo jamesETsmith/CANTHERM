@@ -44,6 +44,7 @@ class CanTherm:
     Parition = []
     scale = 0.0
     out_file = 'output'
+    rx = False
 
     # CBSQB3 E for H, N, O, C, P, Cl
     atomEcbsqb3 = {'H': -0.499818, 'N': -54.520543, 'O': -74.987624,
@@ -62,8 +63,14 @@ class CanTherm:
     atomEub3lyp = {'H': -0.501257936920, 'N': -54.4835759575, 'O':-75.0684969223,
         'C':-37.8519749084, 'S':-398.062555689 }
 
-    # expt H contains H + TC + SOC (spin orbital correction)
-    atomH = {'H': 50.62, 'N': 111.49, 'O': 58.163, 'C': 169.8147}
+    # Experimental \DeltaH from NIST
+    # https://webbook.nist.gov/cgi/cbook.cgi?Source=1984COX%2FWAG1B&Mask=1
+    atomH = {'H': 52.103308, 'C': 171.29082008, 'N': 112.97335608,
+        'O': 59.55551508, 'S': 66.24529302, 'Cl': 28.991666806}
+
+    # Contains H + TC + SOC (spin orbital correction)
+    #atomH = {'H': 50.62, 'N': 111.49, 'O': 58.163, 'C': 169.8147}
+
     # BAC for C-H C-C C=C C.TB.C  O-H  C-O C=O
     bondC = [-0.11, -0.3, -0.08, -0.64, 0.02, 0.33, 0.55]
 
@@ -74,24 +81,27 @@ class CanTherm:
         # Read input file and calculate thermo
         readGeomFc.readInputFile(inputFile, self)
 
-        #     # TODO Test this block and make sure see if it's even executing
-        #     H = molecule.Energy
-        #     atoms = readGeomFc.getAtoms(molecule.Mass)
-        #     atomsH = 0.0
-        #     if molecule.Etype == 'cbsqb3':
-        #         atomE = data.atomEcbsqb3
-        #     if molecule.Etype == 'g3':
-        #         atomE = data.atomEg3
-        #     if molecule.Etype == 'ccsdtf12':
-        #         atomE = data.atomEccsdtf12
-        #     if molecule.Etype == 'DF-LUCCSD(T)-F12':
-        #         atomE = data.atomEccsdt_f12_tz
-        #     if molecule.Etype == 'ub3lyp':
-        #         atomE = data.atomEub3lyp
-        #     # for atom in atoms:
-        #     #     H -= atomE[atom]
-        #     #     atomsH += data.atomH[atom]
-        #     # H = H * ha_to_kcal + atomsH
+        # TODO Test this block and make sure see if it's even executing
+        molecule = self.MoleculeList[0]
+        H = molecule.Energy
+        print(molecule.Energy)
+        atoms = readGeomFc.getAtoms(molecule.Mass)
+        atomsH = 0.0
+        if molecule.Etype == 'cbsqb3':
+            atomE = self.atomEcbsqb3
+        if molecule.Etype == 'g3':
+            atomE = self.atomEg3
+        if molecule.Etype == 'ccsdtf12':
+            atomE = self.atomEccsdtf12
+        if molecule.Etype == 'DF-LUCCSD(T)-F12':
+            atomE = self.atomEccsdt_f12_tz
+        if molecule.Etype == 'ub3lyp':
+            atomE = self.atomEub3lyp
+        for atom in atoms:
+            H -= atomE[atom]
+            atomsH += self.atomH[atom]
+        H = H * ha_to_kcal + atomsH
+        print(H)
         #
         #     # if molecule.Etype == 'cbsqb3':
         #     #     b = 0
@@ -109,6 +119,7 @@ class CanTherm:
 
         # Calculate Kinetics
         if len(self.MoleculeList) == 1:
+            self.write_output()
             return
 
         self.rx = kinetics.Reaction(self.MoleculeList[0], self.MoleculeList[1],
@@ -157,12 +168,13 @@ class CanTherm:
 
 
         # Write Kinetics (if applicable)
-        hr = '*'*80 + '\n\n'
-        spacing = ' '*31
-        oFile.write(hr + spacing + 'Kinetic Properties\n\n' + hr)
+        if self.rx != False:
+            hr = '*'*80 + '\n\n'
+            spacing = ' '*31
+            oFile.write(hr + spacing + 'Kinetic Properties\n\n' + hr)
 
 
-        self.rx.print_properties(oFile)
+            self.rx.print_properties(oFile)
 
         # Print goodbye
         oFile.write('\n\n\n')
