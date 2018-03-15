@@ -74,17 +74,20 @@ class CanTherm:
     # BAC for C-H C-C C=C C.TB.C  O-H  C-O C=O
     bondC = [-0.11, -0.3, -0.08, -0.64, 0.02, 0.33, 0.55]
 
+    def __init__(self, input_filename=False, verbose=1):
+        self.input_filename = input_filename
+        self.verbose = verbose
+
 
     def run(self):
-        inputFile = open(sys.argv[1], 'r')
+        inputFile = open(self.input_filename, 'r')
 
         # Read input file and calculate thermo
-        readGeomFc.readInputFile(inputFile, self)
+        readGeomFc.readInputFile(inputFile, self, verbose=self.verbose)
 
         # TODO Test this block and make sure see if it's even executing
         molecule = self.MoleculeList[0]
         H = molecule.Energy
-        print(molecule.Energy)
         atoms = readGeomFc.getAtoms(molecule.Mass)
         atomsH = 0.0
         if molecule.Etype == 'cbsqb3':
@@ -101,7 +104,6 @@ class CanTherm:
             H -= atomE[atom]
             atomsH += self.atomH[atom]
         H = H * ha_to_kcal + atomsH
-        print(H)
         #
         #     # if molecule.Etype == 'cbsqb3':
         #     #     b = 0
@@ -138,7 +140,8 @@ class CanTherm:
         Write the output file to self.output
         '''
 
-        oFile = open(self.out_file, 'w')
+        self.oFile = open(self.out_file, 'w')
+        oFile = self.oFile
         oFile.write(LICENSE + '\n\n\n\n')
         Temp = self.Temp
 
@@ -186,5 +189,5 @@ class CanTherm:
 
 if __name__ == "__main__":
     # main()
-    data = CanTherm()
+    data = CanTherm(sys.argv[1])
     data.run()

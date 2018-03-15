@@ -22,7 +22,6 @@
 ********************************************************************************
 '''
 
-import pdb
 import readGeomFc
 from Harmonics import *
 from scipy import *
@@ -39,7 +38,7 @@ class Molecule:
     # geom, Mass, Fc, linearity, Energy, Etype, extSymm, nelec, rotors,
     # potentialFile, Iext, ebase, bonds
 
-    def __init__(self, in_file, isTS, scale):
+    def __init__(self, in_file, isTS, scale, verbose):
         self.input_file = in_file
         self.rotors = []
         self.Freq = []
@@ -49,8 +48,9 @@ class Molecule:
         self.Etype = ''
         self.TS = isTS
         self.scale = scale
+        self.verbose = verbose
         self.read_input()
-        # self.print_properties() # TODO
+
 
     def read_input(self):
         '''
@@ -100,9 +100,11 @@ class Molecule:
 
         # read geometry from the file
         if tokens[1].upper() == 'FILE':
-            print("reading Geometry from the file: ", tokens[2])
+            if self.verbose > 0:
+                print("Reading Geometry from the file: ", tokens[2])
             geomFile = open(tokens[2], 'r')
             (self.geom, self.Mass, self.bonds) = readGeomFc.readGeom(geomFile)
+            geomFile.close()
             # print self.geom
         else:
             print(
@@ -160,7 +162,8 @@ class Molecule:
             print('Energy information not given')
             exit()
         if tokens[1].upper() == 'FILE':
-            print('Reading energy from file: ', tokens[2])
+            if self.verbose > 2:
+                print('Reading energy from file: ', tokens[2])
             if (tokens[3].upper() == 'CBS-QB3'):
                 self.Etype = 'cbsqb3'
             elif (tokens[3].upper() == 'G3'):
@@ -170,7 +173,8 @@ class Molecule:
             elif (tokens[3].upper() == 'DF-LUCCSD(T)-F12'):
                 self.Etype= 'DF-LUCCSD(T)-F12'
             self.Energy = readGeomFc.readEnergy(tokens[2], self.Etype)
-            print(self.Energy, self.Etype)
+            if self.verbose > 0:
+                print(self.Energy, self.Etype)
         elif (len(tokens) == 3):
             self.Energy = float(tokens[1])
             if (tokens[2].upper() == 'CBS-QB3'):
@@ -179,7 +183,8 @@ class Molecule:
                 self.Etype = 'g3'
             elif (tokens[2].upper() == 'UB3LYP'):
                 self.Etype = 'ub3lyp'
-            print(self.Etype.upper(), ' Energy: ', self.Energy)
+            if self.verbose > 0:
+                print(self.Etype.upper(), ' Energy: ', self.Energy)
         else:
             print('Cannot read the Energy')
             exit()
@@ -398,14 +403,15 @@ class Molecule:
         '''
 
         # Pint
-        if mode_type == 'trans':
-            self.print_thermo_heading(oFile,'Translational Contributions' )
-        elif mode_type == 'vib':
-            self.print_thermo_heading(oFile,'Vibrational Contributions' )
-        elif mode_type == 'rot':
-            self.print_thermo_heading(oFile,'Rotational Contributions' )
-        elif mode_type == 'int rot':
-            self.print_thermo_heading(oFile,'Int. Rotational Contributions' )
+        if oFile != False:
+            if mode_type == 'trans':
+                self.print_thermo_heading(oFile,'Translational Contributions' )
+            elif mode_type == 'vib':
+                self.print_thermo_heading(oFile,'Vibrational Contributions' )
+            elif mode_type == 'rot':
+                self.print_thermo_heading(oFile,'Rotational Contributions' )
+            elif mode_type == 'int rot':
+                self.print_thermo_heading(oFile,'Int. Rotational Contributions')
 
 
         # Calculate the contributions at each temperature in the list
@@ -438,6 +444,7 @@ class Molecule:
 
             # Harmonic Oscillator Vibrational Mode
             elif mode_type == 'vib':
+                # self.Freq = [5.16263e-05, 144.076, 225.137, 253.893, 315.584, 424.81, 476.464, 501.258, 700.691, 813.164, 863.03, 867.529, 1010.08, 1030.48, 1061.72, 1107.64, 1201.23, 1215.9, 1260.26, 1271.8, 1302.29, 1364.21, 1416, 1448.43, 2877.89, 3218.69, 3229.11, 3250.33, 3265.46, 3284.34, 3289.58]
                 freqs = np.array(self.Freq) * self.scale
                 Q_T = 1.0
                 H_T = 0
@@ -447,9 +454,7 @@ class Molecule:
                     ei = h * freqs[i] * c_in_cm # hv for this mode in J
                     Q_T *= 1.0 / ( 1.0 - np.exp(-ei / (kb * T)) )
                     H_T +=  ei / (np.exp(ei/(kb*T))-1.0) * (N_avo * j_to_cal/1e3)
-                    # Cp_T += R_cal * (ei/(kb*T))**2 * np.exp(ei/(kb*T))/(np.exp(ei/(kb*T)) - 1.0)**2
                     Cp_T += R_cal * (ei/(kb*T))**2 * np.exp(ei/(kb*T))/(1.0-np.exp(ei/(kb*T)))**2
-                    # S_T += R_cal * np.log(Q_T) + H_T * 1e3/T
                     S_T += R_cal * ((ei/(kb*T))/(np.exp(ei/(kb*T)) - 1.0) - np.log(1.0 - np.exp(-ei/(kb*T))))
 
             # Internal Rotor Torsional Modes
@@ -476,8 +481,9 @@ class Molecule:
         # print(S)
 
         # Print thermo data
-        self.print_thermo_contributions(oFile,Temp,Q,H,Cp,S)
-        oFile.write('\n')
+        if oFile != False:
+            self.print_thermo_contributions(oFile,Temp,Q,H,Cp,S)
+            oFile.write('\n')
 
 
         return Q, H, Cp, S

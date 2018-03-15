@@ -1,7 +1,7 @@
 Thermo
 TLIST
 7
-298 300 400 500 600 800 1000
+298.15 300 400 500 600 800 1000
 Scale 0.99
 
 !!! Product of PVC rxn
