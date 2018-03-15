@@ -79,7 +79,7 @@ class Rotor:
     def __init__(self, log_file, geom, masses, bonds, sym, v_ho=0):
         # Member variables
         self.geom = geom # list
-        self.masses = np.array( [masses[i,0] for i in range(len(masses))] )
+        self.masses = masses #np.array( [masses[i,0] for i in range(len(masses))] )
         self.natom = self.masses.size
         self.bonds = bonds
         self.log_file =  log_file

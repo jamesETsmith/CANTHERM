@@ -22,7 +22,6 @@
 ********************************************************************************
 '''
 
-import pdb
 import readGeomFc
 from Harmonics import *
 from scipy import *
@@ -39,7 +38,7 @@ class Molecule:
     # geom, Mass, Fc, linearity, Energy, Etype, extSymm, nelec, rotors,
     # potentialFile, Iext, ebase, bonds
 
-    def __init__(self, in_file, isTS, scale):
+    def __init__(self, in_file, isTS, scale, verbose):
         self.input_file = in_file
         self.rotors = []
         self.Freq = []
@@ -49,8 +48,9 @@ class Molecule:
         self.Etype = ''
         self.TS = isTS
         self.scale = scale
+        self.verbose = verbose
         self.read_input()
-        # self.print_properties() # TODO
+
 
     def read_input(self):
         '''
@@ -100,9 +100,11 @@ class Molecule:
 
         # read geometry from the file
         if tokens[1].upper() == 'FILE':
-            print("reading Geometry from the file: ", tokens[2])
+            if self.verbose > 0:
+                print("Reading Geometry from the file: ", tokens[2])
             geomFile = open(tokens[2], 'r')
             (self.geom, self.Mass, self.bonds) = readGeomFc.readGeom(geomFile)
+            geomFile.close()
             # print self.geom
         else:
             print(
@@ -160,7 +162,8 @@ class Molecule:
             print('Energy information not given')
             exit()
         if tokens[1].upper() == 'FILE':
-            print('Reading energy from file: ', tokens[2])
+            if self.verbose > 2:
+                print('Reading energy from file: ', tokens[2])
             if (tokens[3].upper() == 'CBS-QB3'):
                 self.Etype = 'cbsqb3'
             elif (tokens[3].upper() == 'G3'):
@@ -170,7 +173,8 @@ class Molecule:
             elif (tokens[3].upper() == 'DF-LUCCSD(T)-F12'):
                 self.Etype= 'DF-LUCCSD(T)-F12'
             self.Energy = readGeomFc.readEnergy(tokens[2], self.Etype)
-            print(self.Energy, self.Etype)
+            if self.verbose > 0:
+                print(self.Energy, self.Etype)
         elif (len(tokens) == 3):
             self.Energy = float(tokens[1])
             if (tokens[2].upper() == 'CBS-QB3'):
@@ -179,7 +183,8 @@ class Molecule:
                 self.Etype = 'g3'
             elif (tokens[2].upper() == 'UB3LYP'):
                 self.Etype = 'ub3lyp'
-            print(self.Etype.upper(), ' Energy: ', self.Energy)
+            if self.verbose > 0:
+                print(self.Etype.upper(), ' Energy: ', self.Energy)
         else:
             print('Cannot read the Energy')
             exit()
@@ -189,7 +194,7 @@ class Molecule:
         if (line.split()[0].upper() != 'EXTSYM'):
             print('Extsym keyword required')
             exit()
-        self.extSymm = int(line.split()[1])
+        self.extSymm = float(line.split()[1])
 
         # read electronic degeneracy
         line = readGeomFc.readMeaningfulLine(file)
@@ -398,14 +403,15 @@ class Molecule:
         '''
 
         # Pint
-        if mode_type == 'trans':
-            self.print_thermo_heading(oFile,'Translational Contributions' )
-        elif mode_type == 'vib':
-            self.print_thermo_heading(oFile,'Vibrational Contributions' )
-        elif mode_type == 'rot':
-            self.print_thermo_heading(oFile,'Rotational Contributions' )
-        elif mode_type == 'int rot':
-            self.print_thermo_heading(oFile,'Int. Rotational Contributions' )
+        if oFile != False:
+            if mode_type == 'trans':
+                self.print_thermo_heading(oFile,'Translational Contributions' )
+            elif mode_type == 'vib':
+                self.print_thermo_heading(oFile,'Vibrational Contributions' )
+            elif mode_type == 'rot':
+                self.print_thermo_heading(oFile,'Rotational Contributions' )
+            elif mode_type == 'int rot':
+                self.print_thermo_heading(oFile,'Int. Rotational Contributions')
 
 
         # Calculate the contributions at each temperature in the list
@@ -413,34 +419,16 @@ class Molecule:
         H = []
         Cp = []
         S = []
-
         for T in Temp:
             # Ideal Gas Translational Modes
             # See Tuckerman, Stat. Mech.: Theory and Simulation section 5.6
             if mode_type == 'trans':
-                V = 0.0224 / N_avo # m^3 volume of one molecule of ideal gas at
-                                   # 1 atm #TODO
-                mass = sum(self.Mass) / 1e3 / N_avo # Mass in kg of molecule
-                Q_T = np.power((2 * pi * mass * kb * T)/h**2, 3./2.) * V
+                mass = sum(self.Mass) / 1e3 / N_avo # Mass in kg / molecule
+                Q_T = ((2 * np.pi * mass)/h**2)**1.5/101325 * (kb*T)**2.5
                 H_T = 5.0/2.0 * R_kcal * T
                 Cp_T = 5.0/2.0 * R_cal
-                S_T = R_cal * np.log(Q_T)
-
-            # Harmonic Oscillator Vibrational Mode
-            elif mode_type == 'vib':
-                freqs = np.array(self.Freq) * self.scale
-                Q_T = 1
-                H_T = 0
-                Cp_T = 0
-                S_T = 0
-
-                for i in range(freqs.size):
-                    ei = h * freqs[i] * c_in_cm # hv for this mode in J
-                    Q_T *= 1.0 / ( 1.0 - np.exp(-ei / (kb * T)) )
-                    H_T +=  ei / (np.exp(ei/(kb*T))-1.0) * (N_avo * j_to_cal/1e3)
-                    Cp_T += R_cal * (ei/(kb*T))**2 * np.exp(ei/(kb*T))/(np.exp(ei/(kb*T)) - 1.0)**2
-                    S_T += R_cal * np.log(Q_T) + H_T * 1e3/T
-                    # S_T += R_cal * ((ei/(kb*T))/(np.exp(ei/(kb*T)) - 1.0) + np.log(Q_T))
+                # See Sackur-Tetrode Equation
+                S_T = R_cal * (np.log(Q_T)+ 5.0/2.0)
 
             # Rigid Rotor Rotational Modes
             elif mode_type == 'rot':
@@ -453,6 +441,21 @@ class Molecule:
                 Cp_T = 3.0/2.0 * R_cal
                 S_T = H_T * 1e3 / T + R_cal * np.log(Q_T)
 
+
+            # Harmonic Oscillator Vibrational Mode
+            elif mode_type == 'vib':
+                # self.Freq = [5.16263e-05, 144.076, 225.137, 253.893, 315.584, 424.81, 476.464, 501.258, 700.691, 813.164, 863.03, 867.529, 1010.08, 1030.48, 1061.72, 1107.64, 1201.23, 1215.9, 1260.26, 1271.8, 1302.29, 1364.21, 1416, 1448.43, 2877.89, 3218.69, 3229.11, 3250.33, 3265.46, 3284.34, 3289.58]
+                freqs = np.array(self.Freq) * self.scale
+                Q_T = 1.0
+                H_T = 0
+                Cp_T = 0
+                S_T = 0
+                for i in range(freqs.size):
+                    ei = h * freqs[i] * c_in_cm # hv for this mode in J
+                    Q_T *= 1.0 / ( 1.0 - np.exp(-ei / (kb * T)) )
+                    H_T +=  ei / (np.exp(ei/(kb*T))-1.0) * (N_avo * j_to_cal/1e3)
+                    Cp_T += R_cal * (ei/(kb*T))**2 * np.exp(ei/(kb*T))/(1.0-np.exp(ei/(kb*T)))**2
+                    S_T += R_cal * ((ei/(kb*T))/(np.exp(ei/(kb*T)) - 1.0) - np.log(1.0 - np.exp(-ei/(kb*T))))
 
             # Internal Rotor Torsional Modes
             elif mode_type == 'int rot':
@@ -478,8 +481,9 @@ class Molecule:
         # print(S)
 
         # Print thermo data
-        self.print_thermo_contributions(oFile,Temp,S,Cp,H)
-        oFile.write('\n')
+        if oFile != False:
+            self.print_thermo_contributions(oFile,Temp,Q,H,Cp,S)
+            oFile.write('\n')
 
 
         return Q, H, Cp, S
@@ -514,13 +518,13 @@ class Molecule:
         q_tr, h_tr, cp_tr, s_tr = self.calculate_thermo(oFile, Temp,
             mode_type='trans')
 
-        # Vibration
-        q_vib, h_vib, cp_vib, s_vib = self.calculate_thermo(oFile, Temp,
-            mode_type='vib')
-
         # Rotation
         q_rot, h_rot, cp_rot, s_rot = self.calculate_thermo(oFile, Temp,
             mode_type='rot')
+
+        # Vibration
+        q_vib, h_vib, cp_vib, s_vib = self.calculate_thermo(oFile, Temp,
+            mode_type='vib')
 
         # Internal Rotation
         q_ir, h_ir, cp_ir, s_ir = self.calculate_thermo(oFile, Temp,
@@ -533,7 +537,7 @@ class Molecule:
         S = [s_tr[i]+s_vib[i]+s_rot[i]+s_ir[i] for i in range(len(Temp))]
 
         self.print_thermo_heading(oFile, 'Total Thermo. Contributions')
-        self.print_thermo_contributions(oFile, Temp, S, Cp, H)
+        self.print_thermo_contributions(oFile, Temp, Q, H, Cp, S)
 
         return Q, H, Cp, S
 
@@ -564,7 +568,7 @@ class Molecule:
 
     ############################################################################
 
-    def print_thermo_contributions(self,oFile,Temp,ent,cp,dH):
+    def print_thermo_contributions(self,oFile,Temp, Q, H, Cp, S):
         '''
         Write the thermo contributions from a set of modes to the cantherm
         output file.
@@ -583,28 +587,32 @@ class Molecule:
         '''
 
         horizontal_line = '-'*12 + " "*3
-        horizontal_line *= 4
+        horizontal_line *= 5
         horizontal_line += '\n'
 
         oFile.write(horizontal_line)
         temp_string = 'Temp'
         temp_units_string = 'K'
-        ent_string = 'S'
-        ent_units_string = 'cal/(mol K)'
+        q_string = 'Q'
+        q_units_string = 'Unit-less'
+        s_string = 'S'
+        s_units_string = 'cal/(mol K)'
         cp_string = 'Cp'
         cp_units_string = 'cal/(mol K)'
         h_string = 'H'
         h_units_string = 'kcal/mol'
 
-        oFile.write('{:^12}   {:^12}   {:^12}   {:^12}\n'.format(temp_string,ent_string,cp_string,h_string))
-        oFile.write('{:^12}   {:^12}   {:^12}   {:^12}\n'.format(temp_units_string,ent_units_string,cp_units_string,h_units_string))
+        oFile.write('{:^12}   {:^12}   {:^12}   {:^12}   {:^12}\n'.format(temp_string, q_string, h_string,cp_string, s_string))
+        oFile.write('{:^12}   {:^12}   {:^12}   {:^12}    {:^12}\n'.format(temp_units_string,
+        q_units_string, h_units_string, cp_units_string, s_units_string))
         oFile.write(horizontal_line)
 
         for i in range(len(Temp)):
-            oFile.write('{:^12}'.format(Temp[i]) + "   ")
-            oFile.write('{:^12.2f}'.format(ent[i]) + "   ")
-            oFile.write('{:^12.2f}'.format(cp[i]) + "   ")
-            oFile.write('{:^12.2f}\n'.format(dH[i]))
+            oFile.write('{:^12.2f}'.format(Temp[i]) + "   ")
+            oFile.write('{:^12.3e}'.format(Q[i]) + "   ")
+            oFile.write('{:^12.3f}'.format(H[i]) + "   ")
+            oFile.write('{:^12.3f}'.format(Cp[i]) + "   ")
+            oFile.write('{:^12.3f}\n'.format(S[i]))
 
         oFile.write(horizontal_line + '\n')
         return
@@ -908,7 +916,7 @@ class Molecule:
             dH.append(5.0 / 2 * R_kcal* T / 1000.0)
             i = i + 1
 
-        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
+        #self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH
 
@@ -977,7 +985,7 @@ class Molecule:
                 i = i + 1
             j = j + 1
 
-        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
+        # self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH, parti
 
@@ -1073,7 +1081,7 @@ class Molecule:
             dH.append(H / 1e3)
             cp.append(Cp)
 
-        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
+        #self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH
 
@@ -1131,7 +1139,7 @@ class Molecule:
                 parti[iT] = parti[iT] * sum
 
 
-        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
+        #self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
 
         return ent, cp, dH, parti
 
@@ -1184,5 +1192,5 @@ class Molecule:
             cp.append(3.0 * R_kcal/ 2.0)
             dH.append(3.0 * R_kcal* T / 2.0 / 1.0e3)
 
-        self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
+        #self.print_thermo_contributions(oFile,Temp,ent,cp,dH)
         return ent, cp, dH

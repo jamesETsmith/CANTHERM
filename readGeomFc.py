@@ -35,7 +35,7 @@ import shutil
 import getopt
 
 
-def readInputFile(file, data):
+def readInputFile(file, data, verbose):
 
     # read calculation type
     line = readMeaningfulLine(file)
@@ -63,6 +63,7 @@ def readInputFile(file, data):
     if line.split()[0].upper() == 'TLIST':
         line = readMeaningfulLine(file)
         numTemp = int(line.split()[0])
+        data.Temp = []
         i = 0
         while i < numTemp:
             line = readMeaningfulLine(file)
@@ -71,6 +72,7 @@ def readInputFile(file, data):
             for j in tokens:
                 data.Temp.append(float(j))
         if len(data.Temp) > numTemp:
+            print(len(data.Temp), numTemp)
             print('More Temperatures than ', numTemp, ' are specified')
 
     elif line.split()[0].upper() == 'TRANGE':
@@ -101,9 +103,9 @@ def readInputFile(file, data):
 
     for i in range(numMol):
         if data.ReacType == 'Unimol' and i == 1 or data.ReacType == 'Bimol' and i == 2:
-            molecule = Molecule(file, True, data.scale)
+            molecule = Molecule(file, True, data.scale, verbose)
         else:
-            molecule = Molecule(file, False, data.scale)
+            molecule = Molecule(file, False, data.scale, verbose)
         data.MoleculeList.append(molecule)
     return
 
@@ -432,6 +434,7 @@ def readEnergy(file, string):
                                  ' \s*([\-0-9.]+)', com))
             Energy = re.search('DF-LUCCSD\(T\)-F12\/cc-pVTZ-F12 energy=' + \
                                  ' \s*([\-0-9.]+)', com).group(1)
+    efile.close()
     return float(Energy)
 
 
