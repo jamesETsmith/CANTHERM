@@ -81,6 +81,7 @@ def readInputFile(file, data, verbose):
         T0 = float(tokens[0])
         dT = float(tokens[1])
         numTemp = int(tokens[2])
+        data.Temp = []
         for i in range(numTemp):
             data.Temp.append(T0 + i * dT)
     else:

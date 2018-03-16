@@ -92,7 +92,7 @@ class Rotor:
         self.fit_potential()
         # self.plot()
         self.load_atom_lists()
-        # self.plot_rotational_pes()
+        self.plot_rotational_pes()
         self.calc_reduced_moment()
         self.calc_e_levels()
 
@@ -166,10 +166,10 @@ class Rotor:
         self.alist2 = sets[p2_idx]
 
         # Remove the pivot atoms from the atomlists
-        self.alist1.remove(self.pivot1)
-        self.alist2.remove(self.pivot2)
+        # self.alist1.remove(self.pivot1)
+        # self.alist2.remove(self.pivot2)
 
-        if len(self.alist1 + self.alist2) != self.masses.size - 2:
+        if len(self.alist1 + self.alist2) != self.masses.size:
             print("WARNING: ATOMS MISSING FROM ONE OR BOTH TOPS OF THIS ROTOR")
 
         # print("ALIST1", self.alist1, self.pivot1, len(self.alist1))
@@ -232,31 +232,70 @@ class Rotor:
 
 
     ######################################################################
-    def fit_potential(self, a=None, e=None, n_term=15):
+    def fit_potential(self, a=None, e=None, n_term=11):
         '''
-        A is the matrix of fourier terms. E are the energies. N_term is the
-        number of Fourier terms to include in the expansion.
+        A is the matrix of fourier terms plus the constraint that
+        :math:`\frac{dV}{d\theta} = 0` at :math:`\theta=0`. e are the energies.
+        N_term is the number of Fourier terms to include in the expansion in
+        units of J.
         '''
 
-        if e == None: e = self.energies
+        if e == None: e = self.energies.copy()
+
+        # E1 contains all the scan energies and the constraint.
+        e1 = np.zeros((e.size+1)) #TODO
+        e1[:-1] = e[:]
+        e1[-1] = 0
 
         if a == None:
-            a = np.zeros( (e.shape[0], n_term) )
+            a = np.zeros( (e.shape[0]+1, n_term) )
             th = np.linspace(0,2*np.pi,e.shape[0])
 
             for r in range(a.shape[0]):
+                # Add constraint that dV/d\theta = 0 at \theta = 0
+                if r == a.shape[0] -1:
+                    for c in range(a.shape[1]):
+                        if c == 0 or c%2 == 0:
+                            a[r,c] = 0
+                        else:
+                            a[r,c] = int((c+1)/2)
+                            # a[r,c] = 1
+                            # print(a[r,c])
+                    continue
+
                 for c in range(a.shape[1]):
                     # First coefficient (no sinusoidal function)
                     if c == 0:
                         a[r,c] = 1
                     # a coeffs
                     elif c%2 == 0 and c > 0:
-                        a[r,c] = np.cos(int((c + 1)/2) * th[r])
+                        # print(int((c + 0)/2))
+                        a[r,c] = np.cos(int((c + 0)/2) * th[r])
                     # b coeffs
                     else:
+                        # print(int((c + 1)/2))
                         a[r,c] = np.sin(int((c + 1)/2) * th[r])
 
-        pot_coeffs = reduce(np.dot, (la.inv(np.dot(a.T, a)), a.T, e))
+        # # print(a[1])
+        # N = e.shape[0]
+        # A = np.zeros((N+1,2*n_term), np.float64)
+        # b = np.zeros(N+1, np.float64)
+        # for i in range(N):
+        #     phi = th[i]
+        #     for m in range(n_term):
+        #         A[i,m] = np.cos(m * phi)
+        #         A[i,n_term+m] = np.sin(m * phi)
+        #         b[i] = e[i]
+        # # This row forces dV/dangle = 0 at angle = 0
+        # for m in range(n_term):
+        #     A[N,m+n_term] = 1
+        # print(A[:,n_term])
+        # print(a[-1,:])
+        # print("A[N] ",A[N])
+        # Add constraint to the e1
+
+
+        pot_coeffs = reduce(np.dot, (la.inv(np.dot(a.T, a)), a.T, e1))
         # Store them in an easier to use manner
         self.v0_coeff = pot_coeffs[0] # V_0 coeff
         self.pot_coeffs = np.zeros((2,int((n_term-1)/2)))
@@ -265,6 +304,15 @@ class Rotor:
             self.pot_coeffs[1,i] = pot_coeffs[2*i+1] # b_k coeffs
 
 
+        # print(self.pot_coeffs[0])
+        # print(self.pot_coeffs[1])
+        # check1 = np.array([(k+1)*self.pot_coeffs[1,k] for k in range(0,int((n_term-1)/2))])
+        # check2 = np.array([(k+1)**2*self.pot_coeffs[0,k] for k in range(0,int((n_term-1)/2))])
+        # print(np.sum(check1))
+        # print(np.sum(check2))
+        # e = e[:-1] #TODO
+        # print(e)
+
     ######################################################################
     def calc_reduced_moment(self):
         '''
@@ -272,11 +320,11 @@ class Rotor:
         '''
 
         masses = self.masses
-        geom = np.array(self.geom)
+        geom = self.geom
 
-        m1 = 0
-        m2 = 0
-
+        # Get the center of mass for each top
+        m1 = 0.0
+        m2 = 0.0
         cm1 = np.zeros((3,))
         cm2 = np.zeros((3,))
 
@@ -291,22 +339,22 @@ class Rotor:
         cm1 /= m1
         cm2 /= m2
 
+        # Moments of inertia
         ax_of_rot = (cm1-cm2)/la.norm(cm1-cm2)
-
         I1 = 0.0
         I2 = 0.0
 
         for a1 in self.alist1:
-            r1 = (geom[a1,:] - cm1) - ((geom[a1,:] - cm1) * ax_of_rot.T) * \
-                ax_of_rot
+            r1 = (geom[a1,:] - cm1) - (np.dot((geom[a1,:] - cm1), ax_of_rot) *
+                ax_of_rot)
             I1 += masses[a1] * la.norm(r1)**2
 
-        for a2 in self.alist1:
-            r2 = (geom[a2,:] - cm2) - ((geom[a2,:] - cm2) * ax_of_rot.T) * \
-                ax_of_rot
+        for a2 in self.alist2:
+            r2 = (geom[a2,:] - cm2) - (np.dot((geom[a2,:] - cm2), ax_of_rot) *
+                ax_of_rot)
             I2 += masses[a2] * la.norm(r2)**2
 
-
+        # Reduced moment of inertia
         self.i_red = 1.0/ (1.0/I1 + 1.0/I2)
 
         # Change units from g/mol*A^2 to kg*m^2
@@ -315,7 +363,7 @@ class Rotor:
 
 
     ######################################################################
-    def calc_e_levels(self):
+    def calc_e_levels(self, save_fig=False):
         '''
         Calculate the hindered rotor energies for the rotor object.
 
@@ -328,26 +376,39 @@ class Rotor:
         i_red = self.i_red
         coeffs = self.pot_coeffs
         v0 = self.v0_coeff
+        # print(v0)
         n_fit = coeffs.shape[1] #int((pot_coeffs.size - 1)/2)
-
+        B = h**2 / (8.0 * np.pi**2 * i_red)
         for n in range(-m, m+1):
             # (kg * m^2/s)^2 / (kg * m^2) [=] kg * m^2 / s^2 [=] J
-            # print((n-m)**2 * h**2 / (8 * np.pi**2 * i_red)) # TODO
-            ham_ir[n+m,n+m] = n**2 * h**2 / (8.0 * np.pi**2 * i_red) # Kinetic Contr.
-            ham_ir[n+m,n+m] += v0                                    # Potential Contr.
+            # print(n**2 * h**2 / (8.0 * np.pi**2 * i_red)) # TODO
+            # print(v0)
+            ham_ir[n+m,n+m] = n**2 *  B  + v0
 
             for k in range(1, n_fit+1):
                 # rows > cols (below the diagonal)
                 if n + m - k >= 0:
                     ham_ir[n+m,n+m-k] = 0.5 * coeffs[0,k-1] # a_k term
-                    ham_ir[n+m,n+m-k] += 1j * 0.5 * coeffs[1,k-1] # b_k term
+                    ham_ir[n+m,n+m-k] += 0.5j * coeffs[1,k-1] # b_k term
                 # cols > rows (above the diagonal)
                 if n + m + k < 2*m+1:
                     ham_ir[n+m,n+m+k] = 0.5 * coeffs[0,k-1] # a_k term
-                    ham_ir[n+m,n+m+k] -= 1j * 0.5 * coeffs[1,k-1] # b_k term
+                    ham_ir[n+m,n+m+k] -= 0.5j * coeffs[1,k-1] # b_k term
 
-        self.e_levels, _ = la.eigh(ham_ir)
+        self.e_levels, _ = la.eigh(ham_ir) # TODO
+        if save_fig:
+            plt.figure()
+            v_fit = self.calculate_potential()
+            v_fit = np.roll(v_fit, 100)
+            th = np.linspace(0,2*np.pi, num=v_fit.size)
+            plt.plot(th, v_fit)
 
+            for i in range(100):
+                plt.plot(th, [self.e_levels[i]]*th.size)
+
+            # plt.show()
+            plt.savefig("e_levels_%.0f.png" % self.v_ho)
+            # plt.close('all')
 
     ######################################################################
     ### Optional Functions ###############################################
@@ -382,6 +443,7 @@ class Rotor:
             eps = np.array([h*mu*(n+0.5) for n in range(10000)])
 
         zpe = eps[0] * N_avo/ 1.0e3/ kcal_to_kj
+        # print(eps[0]/kb/t)
         eps -= eps[0] # Shift by ZPE
         eps *= N_avo # Convert to molar quantities (J/mol)
 
@@ -475,7 +537,7 @@ class Rotor:
 
 
     ######################################################################
-    def plot_rotational_pes(self, fitted=True, n_fit=100):
+    def plot_rotational_pes(self, fitted=True, n_fit=100, show=False):
         '''
         Plot the 1-D Rotor PES.
         '''
@@ -489,8 +551,12 @@ class Rotor:
                  np.array(self.energies), marker='o', linestyle='--',
                  label="Calculated")
         plt.plot(th, v_fit, label="Fit")
+        plt.xlabel('Angle / Radians')
+        plt.ylabel('Energy / J')
         plt.legend()
-        plt.show()
+        if show: plt.show()
+        plt.savefig('rotor_%.0f_cm-1.png' % self.v_ho)
+        # plt.close('all')
 
 
 
