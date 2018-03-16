@@ -29,15 +29,15 @@ import CanTherm
 
 sig_fig = 4
 
-class KnowValues(unittest.TestCase):
-    def setUp(self):
-        self.data = CanTherm.CanTherm(input_filename = 'input2', verbose=0)
-        self.data.run()
-        self.gs = self.data.MoleculeList[0]
+os.chdir('../examples/h-transf/')
+data = CanTherm.CanTherm(input_filename = 'input2', verbose=0)
+data.run()
+gs = data.MoleculeList[0]
 
+class KnowValues(unittest.TestCase):
     def test1_trans(self):
         print('\nTesting translational thermodynamics...')
-        q_tr, h_tr, cp_tr, s_tr = self.gs.calculate_thermo(False, [298.15],
+        q_tr, h_tr, cp_tr, s_tr = gs.calculate_thermo(False, [298.15],
                                                            mode_type='trans')
         self.assertAlmostEqual(q_tr[0]/1e7, 2.5552579, places=(sig_fig-1) )
         self.assertAlmostEqual(h_tr[0], 1.4802253, places=(sig_fig-1) )
@@ -46,7 +46,7 @@ class KnowValues(unittest.TestCase):
 
     def test2_rot(self):
         print('\nTesting rotational thermodynamics...')
-        q_rot, h_rot, cp_rot, s_rot = self.gs.calculate_thermo(False, [298.15],
+        q_rot, h_rot, cp_rot, s_rot = gs.calculate_thermo(False, [298.15],
                                                            mode_type='rot')
         self.assertAlmostEqual(q_rot[0]/1e4, 8.8472248, places=(sig_fig-1))
         self.assertAlmostEqual(h_rot[0]*10, 8.88135182, places=(sig_fig-1) )
@@ -55,7 +55,7 @@ class KnowValues(unittest.TestCase):
 
     def test3_vib(self):
         print('\nTesting vibrational thermodynamics...')
-        q_vib, h_vib, cp_vib, s_vib = self.gs.calculate_thermo(False, [298.15],
+        q_vib, h_vib, cp_vib, s_vib = gs.calculate_thermo(False, [298.15],
                                                            mode_type='vib')
         self.assertAlmostEqual(q_vib[0]/10, 1.1103774, places=(sig_fig-1) )
         self.assertAlmostEqual(h_vib[0], 2.1709434, places=(sig_fig-1) )
@@ -63,6 +63,4 @@ class KnowValues(unittest.TestCase):
         self.assertAlmostEqual(s_vib[0]/10, 1.2057099, places=(sig_fig-1) )
 
 if __name__ == "__main__":
-    print("Full Tests for c6h6")
-    os.chdir('../examples/h-transf/')
     unittest.main()

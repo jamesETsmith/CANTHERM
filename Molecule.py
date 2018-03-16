@@ -309,7 +309,8 @@ class Molecule:
                 exit()
 
             for i in range(self.numRotors):
-                print("Removing hindered rotor frequency %s cm^-1 from the list of vibrational frequencies." % tokens[i+1])
+                if self.verbose > 0:
+                    print("Removing hindered rotor frequency %s cm^-1 from the list of vibrational frequencies." % tokens[i+1])
                 rm_idx = self.Freq.index(float(tokens[i+1]))
                 self.hindFreq.append(self.Freq[rm_idx]) # Keep track of them
                 del self.Freq[rm_idx]
@@ -444,7 +445,6 @@ class Molecule:
 
             # Harmonic Oscillator Vibrational Mode
             elif mode_type == 'vib':
-                # self.Freq = [5.16263e-05, 144.076, 225.137, 253.893, 315.584, 424.81, 476.464, 501.258, 700.691, 813.164, 863.03, 867.529, 1010.08, 1030.48, 1061.72, 1107.64, 1201.23, 1215.9, 1260.26, 1271.8, 1302.29, 1364.21, 1416, 1448.43, 2877.89, 3218.69, 3229.11, 3250.33, 3265.46, 3284.34, 3289.58]
                 freqs = np.array(self.Freq) * self.scale
                 Q_T = 1.0
                 H_T = 0
@@ -453,9 +453,11 @@ class Molecule:
                 for i in range(freqs.size):
                     ei = h * freqs[i] * c_in_cm # hv for this mode in J
                     Q_T *= 1.0 / ( 1.0 - np.exp(-ei / (kb * T)) )
-                    H_T +=  ei / (np.exp(ei/(kb*T))-1.0) * (N_avo * j_to_cal/1e3)
-                    Cp_T += R_cal * (ei/(kb*T))**2 * np.exp(ei/(kb*T))/(1.0-np.exp(ei/(kb*T)))**2
-                    S_T += R_cal * ((ei/(kb*T))/(np.exp(ei/(kb*T)) - 1.0) - np.log(1.0 - np.exp(-ei/(kb*T))))
+                    H_T +=  ei/ (np.exp(ei/(kb*T))-1.0) * (N_avo * j_to_cal/1e3)
+                    Cp_T += R_cal * (ei/(kb*T))**2 * np.exp(ei/(kb*T))/(1.0 -
+                        np.exp(ei/(kb*T)))**2
+                    S_T += R_cal * ((ei/(kb*T))/(np.exp(ei/(kb*T)) - 1.0) -
+                        np.log(1.0 - np.exp(-ei/(kb*T))))
 
             # Internal Rotor Torsional Modes
             elif mode_type == 'int rot':
@@ -677,7 +679,7 @@ class Molecule:
         out_file.write('Energy = %10.3e kcal/mol\n' % (self.Energy*ha_to_kcal))
         out_file.write('External Symmetry = ' + str(self.extSymm) + '\n')
         Iext = self.Iext.copy() * 1e23 * N_avo
-        out_file.write('Principal Moments of Inertia = ' +
+        out_file.write('Principal Moments of Inertia (amu * ang.^2)= ' +
                        '%10.3f %10.3f %10.3f \n' % (Iext[0],Iext[1],Iext[2]) )
 
         out_file.write('Electronic Degeneracy = ' + str(self.nelec) + '\n\n')

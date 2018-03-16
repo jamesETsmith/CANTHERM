@@ -38,10 +38,6 @@ class CanTherm:
     ReacType = ''
     Temp = []
     MoleculeList = []
-    Entropy = []
-    Thermal = []
-    Cp = []
-    Parition = []
     scale = 0.0
     out_file = 'output'
     rx = False
@@ -81,6 +77,8 @@ class CanTherm:
 
     def run(self):
         inputFile = open(self.input_filename, 'r')
+        self.Temp = []
+        self.MoleculeList = []
 
         # Read input file and calculate thermo
         readGeomFc.readInputFile(inputFile, self, verbose=self.verbose)
