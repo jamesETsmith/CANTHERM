@@ -39,7 +39,7 @@ class CanTherm:
     Temp = []
     MoleculeList = []
     scale = 0.0
-    out_file = 'output'
+    # out_file = 'output'
     rx = False
 
     # CBSQB3 E for H, N, O, C, P, Cl
@@ -70,8 +70,9 @@ class CanTherm:
     # BAC for C-H C-C C=C C.TB.C  O-H  C-O C=O
     bondC = [-0.11, -0.3, -0.08, -0.64, 0.02, 0.33, 0.55]
 
-    def __init__(self, input_filename=False, verbose=1):
+    def __init__(self, input_filename=False, out_file='output', verbose=1):
         self.input_filename = input_filename
+        self.out_file = out_file
         self.verbose = verbose
 
 
@@ -162,7 +163,7 @@ class CanTherm:
         oFile.write(hr + spacing + 'Thermodynamic Properties\n\n' + hr)
 
         for molecule in self.MoleculeList:
-            mol_header = 'Molecule %i\n' % (self.MoleculeList.index(molecule) + 1)
+            mol_header = 'Molecule %i\nDF-LUCCSD(T)-F12' % (self.MoleculeList.index(molecule) + 1)
             mol_header += '-'*(len(mol_header)-1) + '\n\n'
             oFile.write(mol_header)
             molecule.calculate_all_thermo(Temp,oFile)
@@ -187,5 +188,5 @@ class CanTherm:
 
 if __name__ == "__main__":
     # main()
-    data = CanTherm(sys.argv[1])
+    data = CanTherm(input_filename=sys.argv[1], out_file=sys.argv[2])
     data.run()

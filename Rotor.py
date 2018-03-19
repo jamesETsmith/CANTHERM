@@ -123,6 +123,7 @@ class Rotor:
 
         sets = [ [i] for i in range(natom) ]
         # print("SETS0", sets) # TODO
+        # print(self.pivot1,self.pivot2)
         idx = self.bonds.index([min(self.pivot1,self.pivot2),
                                 max(self.pivot1,self.pivot2)])
 
