@@ -25,7 +25,7 @@
 from numpy import *
 import pdb
 import readGeomFc
-from Harmonics import *
+from harmonics import *
 from scipy import *
 import random
 import math

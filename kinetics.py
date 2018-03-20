@@ -22,7 +22,7 @@
 ********************************************************************************
 '''
 
-import math
+import math, re
 import numpy as np
 import matplotlib.pyplot as plt
 from constants import *
@@ -166,3 +166,62 @@ class Reaction:
 def wigner_correction(t, freq, scale):
     # see doi:10.1103/PhysRev.40.749 and doi:10.1039/TF9595500001
     return (1.0 + 1.0 / 24.0 * (h * abs(freq) * scale * c_in_cm / (t * kb) )**2)
+
+################################################################################
+
+class RxSystem:
+
+    def __init__(self, outputs, temps, name):
+        '''
+        Arguments:
+
+            outputs [string]: List of reaction output files.
+
+            temp [float]: List of temperatures
+        '''
+
+        self.outputs = outputs
+        self.temps = temps
+        self.name = name
+        self.a_coeffs = []
+        self.a_exp = []
+        self.ea = []
+        self.tst_rates = []
+
+    def get_kinetics_from_output(self):
+
+        n_temps = len(self.temps)
+        for filename in self.outputs:
+            with open(filename, 'r') as f:
+                reading_kinetics = False
+                lines = f.readlines()
+                rates = []
+
+                for i in range(len(lines)):
+                    if re.search('\s+Kinetic Properties*', lines[i]):
+                        reading_kinetics = True
+                        # i += 7
+                        continue
+                    if reading_kinetics:
+                        if len(lines[i].split()) == 2 and lines[i].split()[0] != '---------':
+                            # print(lines[i].split())
+                            rates.append(float(lines[i].split()[1]))
+
+
+                # print(rates)
+                self.tst_rates.append(rates)
+
+    def plot_tst_rates(self):
+        plt.figure()
+        i = 0
+
+        for output in self.outputs:
+            rates = np.log(np.array(self.tst_rates[i]))
+            plt.plot(self.temps, rates, 'o', ls='-', label=output)
+
+            i += 1
+
+        plt.legend()
+        plt.xlabel("Temperature / K")
+        plt.ylabel("ln(k)")
+        plt.savefig(self.name+".png")

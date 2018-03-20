@@ -2,7 +2,7 @@
 
 import os
 import sys
-from Harmonics import *
+from harmonics import *
 
 file = sys.argv[1]
 

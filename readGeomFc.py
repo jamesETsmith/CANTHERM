@@ -26,10 +26,10 @@
 
 import os
 from numpy import *
-from Rotor import *
+from rotor import *
 import pdb
-import CanTherm
-from Molecule import *
+import cantherm
+from molecule import *
 import re
 import shutil
 import getopt
