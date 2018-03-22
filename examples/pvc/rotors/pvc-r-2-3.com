@@ -1,7 +1,7 @@
 %mem=60GB
 %nprocshared=28
-# opt=(modredundant,verytight) cbs-qb3 nosymm geom=connectivity
-ccsd=maxcyc=1000 optcyc=200
+# opt=(modredundant,tight,maxcyc=400) cbs-qb3 nosymm geom=connectivity
+ccsd=maxcyc=1000
 
 Title Card Required
 
