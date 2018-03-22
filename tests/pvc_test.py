@@ -18,12 +18,12 @@ S cal/(mol K) 28.746466
 
 import unittest
 import os
-import CanTherm
+import cantherm.cantherm as cantherm
 
 sig_fig = 4
 
 os.chdir('../examples/pvc/')
-data = CanTherm.CanTherm(input_filename = 'input', verbose=0)
+data = cantherm.CanTherm(input_filename = 'input', verbose=0)
 data.run()
 gs = data.MoleculeList[0]
 

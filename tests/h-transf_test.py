@@ -25,12 +25,12 @@ S cal/(mol K) 12.065042
 
 import unittest
 import os
-import CanTherm
+import cantherm.cantherm as cantherm
 
 sig_fig = 4
 
 os.chdir('../examples/h-transf/')
-data = CanTherm.CanTherm(input_filename = 'input2', verbose=0)
+data = cantherm.CanTherm(input_filename = 'input2', verbose=0)
 data.run()
 gs = data.MoleculeList[0]
 

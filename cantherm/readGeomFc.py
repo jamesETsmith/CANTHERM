@@ -431,8 +431,6 @@ def readEnergy(file, string):
     # Molpro File
     elif tokens[-1] == 'res':
         if string == 'DF-LUCCSD(T)-F12':
-            print(re.findall('DF-LUCCSD\(T\)-F12\/cc-pVTZ-F12 energy=' + \
-                                 ' \s*([\-0-9.]+)', com))
             Energy = re.search('DF-LUCCSD\(T\)-F12\/cc-pVTZ-F12 energy=' + \
                                  ' \s*([\-0-9.]+)', com).group(1)
     efile.close()

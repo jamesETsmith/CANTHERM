@@ -211,17 +211,23 @@ class RxSystem:
                 # print(rates)
                 self.tst_rates.append(rates)
 
-    def plot_tst_rates(self):
+    def plot_tst_rates(self, log_plot=True):
         plt.figure()
         i = 0
 
         for output in self.outputs:
-            rates = np.log(np.array(self.tst_rates[i]))
+            if log_plot:
+                rates = np.log(np.array(self.tst_rates[i]))
+            else:
+                rates = self.tst_rates[i]
             plt.plot(self.temps, rates, 'o', ls='-', label=output)
 
             i += 1
 
         plt.legend()
         plt.xlabel("Temperature / K")
-        plt.ylabel("ln(k)")
+        if log_plot:
+            plt.ylabel("ln(k)")
+        else:
+            plt.ylabel("k / $s^{-1}$")
         plt.savefig(self.name+".png")

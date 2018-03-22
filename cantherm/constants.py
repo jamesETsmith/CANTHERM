@@ -40,6 +40,7 @@ N_avo = 6.0221409e23
 ha_to_kcal = 627.5095 # kcal/mol/Ha
 ha_to_kj_mol = 2625.50 # kJ/mol/Ha
 kcal_to_kj = 4.184 # kJ/kcal
+kj_to_kcal = 1.0/kcal_to_kj
 cal_to_j = 4.184 # J/cal
 j_to_cal = 1/cal_to_j # cal/J
 ha_to_j = 4.359744650e-18 # J/ha
