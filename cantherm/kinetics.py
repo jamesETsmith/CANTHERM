@@ -367,12 +367,16 @@ def get_barriers(energy_files, outputs, plot=False,plot_name=''):
         # Label the height of the bars
         for i in ind:
             height = barriers[0][i]
-            plt.text(i + wid/4., 1.05*height, '%.5f' % height)
+            plt.text(i + wid/4., 1.05*height, '%.5f' % height, ha='center')
 
         # Titles and ticks
         plt.title('Barrier Heights as a Function of Method for %s' % plot_name)
         plt.xticks(ind+wid/2., barriers[1][:], rotation=90)
         plt.ylabel('Energy Barrier / Ha')
+
+        # Formatting
+        plt.ylim( min(0,min(barriers[0][:])*1.25), max(barriers[0][:])*1.25 )
+        plt.xlim( ind[0]-1, ind[-1]+1 )
         plt.tight_layout()
         plt.savefig(plot_name+ '_barrier_heights'+'.png')
         plt.close()
