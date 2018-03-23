@@ -28,7 +28,6 @@ import os
 from numpy import *
 from rotor import *
 import pdb
-import cantherm
 from molecule import *
 import re
 import shutil
@@ -88,13 +87,22 @@ def readInputFile(file, data, verbose):
         print('Temperaure information not given either use keyword Tlist or Trange')
         exit()
 
-# read scaling factor
+    # read scaling factor
     line = readMeaningfulLine(file)
     if (line.split()[0].upper() != 'SCALE'):
         print('Give a scaling factor')
+        exit(0)
     data.scale = float(line.split()[1])
 
-# read molecular data
+    # Read root directory (if included)
+    line = readMeaningfulLine(file)
+    if (line.split()[0].upper() == 'ROOTDIR'):
+        data.dir = line.split()[1] + '/'
+    else:
+        print('Specify root directory')
+        # exit(0)
+
+    # read molecular data
     if (data.CalcType == 'Thermo'):
         numMol = 1
     elif data.CalcType == 'Reac' and data.ReacType == 'Unimol':
@@ -104,9 +112,9 @@ def readInputFile(file, data, verbose):
 
     for i in range(numMol):
         if data.ReacType == 'Unimol' and i == 1 or data.ReacType == 'Bimol' and i == 2:
-            molecule = Molecule(file, True, data.scale, verbose)
+            molecule = Molecule(file, True, data.scale, verbose, data.dir)
         else:
-            molecule = Molecule(file, False, data.scale, verbose)
+            molecule = Molecule(file, False, data.scale, verbose, data.dir)
         data.MoleculeList.append(molecule)
     return
 
@@ -433,6 +441,30 @@ def readEnergy(file, string):
         if string == 'DF-LUCCSD(T)-F12':
             Energy = re.search('DF-LUCCSD\(T\)-F12\/cc-pVTZ-F12 energy=' + \
                                  ' \s*([\-0-9.]+)', com).group(1)
+
+        elif string == 'UCCSD(T)-F12':
+            Energy = re.search('UCCSD\(T\)-F12\/cc-pVTZ-F12 energy=' + \
+                                 ' \s*([\-0-9.]+)', com).group(1)
+
+        elif string == 'RHF-LRMP2':
+            Energy = re.search('RHF-LRMP2 STATE 1.1 Energy' + '\s*([\-0-9.]+)',
+                               com).group(1)
+
+        elif string == 'RHF-RMP2':
+            Energy = re.search('RHF-RMP2 energy' + '\s*([\-0-9.]+)',
+                               com ).group(1)
+
+        elif string == 'RHF-UCCSD-F12a':
+            Energy = re.search('RHF-UCCSD-F12a energy' + '\s*([\-0-9.]+)',
+                               com ).group(1)
+
+        elif string == 'LUCCSD-F12a':
+            E_corr = re.search('LUCCSD-F12a correlation energy' + '\s*([\-0-9.]+)',
+                               com ).group(1)
+            E_ref = re.search('New reference energy'+ '\s*([\-0-9.]+)',
+                               com ).group(1)
+            Energy = float(E_ref) + float(E_corr)
+
     efile.close()
     return float(Energy)
 

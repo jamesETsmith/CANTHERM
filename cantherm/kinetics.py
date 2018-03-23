@@ -27,10 +27,39 @@ import numpy as np
 import matplotlib.pyplot as plt
 from constants import *
 from functools import reduce
+from cantherm import readGeomFc
+readEnergy = readGeomFc.readEnergy
 
 la = np.linalg
 
 class Reaction:
+    '''
+    Attributes:
+
+        reactants ():
+
+        ts ():
+
+        temp ():
+
+        calc_type ():
+
+        reac_type ():
+
+        products ():
+
+        tunneling ():
+
+        scale ():
+
+        rates ():
+
+        arrhenius_coeff ():
+
+        activation_energy ():
+
+    '''
+
     def __init__(self, reactants, ts, temp, calc_type='CBS-QB3',
                  reac_type='Unimol', products=[], tunneling=None, scale=0.99):
         self.reactants = reactants
@@ -161,11 +190,6 @@ class Reaction:
         out_file.write('E_a = %.3f kcal/mol\n' % self.activation_energy)
 
 
-################################################################################
-
-def wigner_correction(t, freq, scale):
-    # see doi:10.1103/PhysRev.40.749 and doi:10.1039/TF9595500001
-    return (1.0 + 1.0 / 24.0 * (h * abs(freq) * scale * c_in_cm / (t * kb) )**2)
 
 ################################################################################
 
@@ -175,9 +199,11 @@ class RxSystem:
         '''
         Arguments:
 
-            outputs [string]: List of reaction output files.
+            outputs ([string]): List of reaction output files.
 
-            temp [float]: List of temperatures
+            temps ([float]): List of temperatures.
+
+            name (string): Name of the rxn system
         '''
 
         self.outputs = outputs
@@ -187,6 +213,11 @@ class RxSystem:
         self.a_exp = []
         self.ea = []
         self.tst_rates = []
+        self.energy_files = []
+        self.barriers = []
+
+
+    ############################################################################
 
     def get_kinetics_from_output(self):
 
@@ -196,6 +227,7 @@ class RxSystem:
                 reading_kinetics = False
                 lines = f.readlines()
                 rates = []
+                e_files = []
 
                 for i in range(len(lines)):
                     if re.search('\s+Kinetic Properties*', lines[i]):
@@ -207,9 +239,20 @@ class RxSystem:
                             # print(lines[i].split())
                             rates.append(float(lines[i].split()[1]))
 
+                    if len(lines[i].split(':')) > 0 and \
+                        lines[i].split(':')[0] == 'Energy file':
+                        # Add the file name and the energy type
+                        e_files.append([lines[i].split(':')[1].strip(),
+                                        lines[i+1].split()[-1]])
 
+                self.energy_files.append(e_files)
+                # print(e_file)
                 # print(rates)
                 self.tst_rates.append(rates)
+
+
+
+    ############################################################################
 
     def plot_tst_rates(self, log_plot=True):
         plt.figure()
@@ -231,3 +274,114 @@ class RxSystem:
         else:
             plt.ylabel("k / $s^{-1}$")
         plt.savefig(self.name+".png")
+
+
+
+################################################################################
+
+def get_barriers(energy_files, outputs, plot=False,plot_name=''):
+    '''
+    Collect the energy barrier data from the various final and possibly
+    other intermediate eneriges, e.g. MP2 energies in a CCSD(T) calculation.
+
+    Arguments:
+
+        energy_files ([[[string]]]): First index is reaction, second is gs or ts,
+            third is energy (0) and method (1).
+    '''
+
+    barriers = [[],[],[]]
+
+    i = 0
+    for e_files in energy_files:
+        if e_files[0][1] != e_files[1][1]:
+            print("ERROR: Energy methods for GS and TS don't match.")
+            print(e_files[0][1], e_files[1][1])
+            print("Exiting...")
+            exit(0)
+
+        gs_e = readEnergy(e_files[0][0], e_files[0][1])
+        ts_e = readEnergy(e_files[1][0], e_files[1][1])
+
+        # Barrier
+        dE = ts_e - gs_e
+        # Add barrier along with method to barriers attribute.
+        barriers[0].append(dE)
+        barriers[1].append(e_files[0][1])
+        barriers[2].append( outputs[i])
+
+        # Get "intermediate" energies
+        if e_files[0][1] == 'cbsqb3':
+            gs_ub3lyp_e = readEnergy(e_files[0][0], 'ub3lyp')
+            ts_ub3lyp_e = readEnergy(e_files[1][0], 'ub3lyp')
+
+            dE_ub3lyp = ts_ub3lyp_e - gs_ub3lyp_e
+            barriers[0].append(dE_ub3lyp)
+            barriers[1].append('ub3lyp')
+            barriers[2].append( outputs[i])
+
+        elif e_files[0][1] == 'DF-LUCCSD(T)-F12':
+            gs_lrmp2_e = readEnergy(e_files[0][0], 'RHF-LRMP2')
+            ts_lrmp2_e = readEnergy(e_files[1][0], 'RHF-LRMP2')
+
+            dE_lrmp2 = ts_lrmp2_e - gs_lrmp2_e
+            barriers[0].append(dE_lrmp2)
+            barriers[1].append('RHF-LRMP2')
+            barriers[2].append( outputs[i])
+
+            gs_ccsd_e = readEnergy(e_files[0][0], 'LUCCSD-F12a')
+            ts_ccsd_e = readEnergy(e_files[1][0], 'LUCCSD-F12a')
+
+            dE_ccsd = ts_ccsd_e - gs_ccsd_e
+            barriers[0].append(dE_ccsd)
+            barriers[1].append('LUCCSD-F12a')
+            barriers[2].append( outputs[i])
+
+        elif e_files[0][1] == 'UCCSD(T)-F12':
+            gs_rmp2_e = readEnergy(e_files[0][0], 'RHF-RMP2')
+            ts_rmp2_e = readEnergy(e_files[1][0], 'RHF-RMP2')
+
+            dE_rmp2 = ts_rmp2_e - gs_rmp2_e
+            barriers[0].append(dE_rmp2)
+            barriers[1].append('RHF-RMP2')
+            barriers[2].append( outputs[i])
+
+            gs_ccsd_e = readEnergy(e_files[0][0], 'RHF-UCCSD-F12a')
+            ts_ccsd_e = readEnergy(e_files[1][0], 'RHF-UCCSD-F12a')
+
+            dE_ccsd = ts_ccsd_e - gs_ccsd_e
+            barriers[0].append(dE_ccsd)
+            barriers[1].append('RHF-UCCSD-F12a')
+            barriers[2].append( outputs[i])
+
+        i += 1
+
+    # print(barriers)
+    # Plot the barrier heigts
+    if plot:
+        ind = np.arange(len(barriers[0]))
+        wid = 0.35
+
+        plt.figure()
+        plt.bar(ind, barriers[0][:], wid)
+        # Label the height of the bars
+        for i in ind:
+            height = barriers[0][i]
+            plt.text(i + wid/4., 1.05*height, '%.5f' % height)
+
+        # Titles and ticks
+        plt.title('Barrier Heights as a Function of Method for %s' % plot_name)
+        plt.xticks(ind+wid/2., barriers[1][:], rotation=90)
+        plt.ylabel('Energy Barrier / Ha')
+        plt.tight_layout()
+        plt.savefig(plot_name+ '_barrier_heights'+'.png')
+        plt.close()
+
+    return(barriers)
+
+
+################################################################################
+
+def wigner_correction(t, freq, scale):
+    # see doi:10.1103/PhysRev.40.749 and doi:10.1039/TF9595500001
+    return (1.0 + 1.0 / 24.0 * (h * abs(freq) * scale * c_in_cm / (t * kb) )**2)

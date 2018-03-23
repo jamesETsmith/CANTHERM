@@ -68,13 +68,18 @@ class Molecule:
         Mass (np.array): 1D numpy array of floats for the masses, index matches
             atom number.
 
+        e_file (string): Path to the energy file (if one exists)
+
+        dir (string): Root directory for all FILEs listed in input.
+
     '''
 
-    def __init__(self, in_file, isTS, scale, verbose):
+    def __init__(self, in_file, isTS, scale, verbose, root_dir):
         self.input_file = in_file
         self.TS = isTS
         self.scale = scale
         self.verbose = verbose
+        self.dir = root_dir
 
         # Initialize other attributes
         self.Freq = []
@@ -136,8 +141,8 @@ class Molecule:
         # read geometry from the file
         if tokens[1].upper() == 'FILE':
             if self.verbose > 0:
-                print("Reading Geometry from the file: ", tokens[2])
-            geomFile = open(tokens[2], 'r')
+                print("Reading Geometry from the file: ", self.dir + tokens[2])
+            geomFile = open(self.dir+tokens[2], 'r')
             (self.geom, self.Mass, self.bonds) = readGeomFc.readGeom(geomFile)
             geomFile.close()
             # print self.geom
@@ -152,7 +157,7 @@ class Molecule:
         line = readGeomFc.readMeaningfulLine(file)
         tokens = line.split()
         if tokens[0].upper() == 'FORCEC' and tokens[1].upper() == 'FILE':
-            fcfile = open(tokens[2], 'r')
+            fcfile = open(self.dir+tokens[2], 'r')
             self.Fc = readGeomFc.readFc(fcfile)
 
             for i in range(0, 3 * self.Mass.size):
@@ -179,7 +184,7 @@ class Molecule:
 
 
         elif tokens[0].upper() == "FREQ" and tokens[1].upper() == "FILE":
-            freq_raw = readGeomFc.read_freq(tokens[2])
+            freq_raw = readGeomFc.read_freq(self.dir + tokens[2])
             for freq in freq_raw:
                 if freq < 0 and self.TS:
                     self.imagFreq = freq
@@ -197,8 +202,8 @@ class Molecule:
             print('Energy information not given')
             exit()
         if tokens[1].upper() == 'FILE':
-            if self.verbose > 2:
-                print('Reading energy from file: ', tokens[2])
+            if self.verbose > 0:
+                print('Reading energy from file: ', self.dir + tokens[2])
             if (tokens[3].upper() == 'CBS-QB3'):
                 self.Etype = 'cbsqb3'
             elif (tokens[3].upper() == 'G3'):
@@ -207,10 +212,14 @@ class Molecule:
                 self.Etype = 'ub3lyp'
             elif (tokens[3].upper() == 'DF-LUCCSD(T)-F12'):
                 self.Etype= 'DF-LUCCSD(T)-F12'
-            self.Energy = readGeomFc.readEnergy(tokens[2], self.Etype)
+            elif (tokens[3].upper() == 'UCCSD(T)-F12'):
+                self.Etype = 'UCCSD(T)-F12'
+            self.Energy = readGeomFc.readEnergy(self.dir +tokens[2], self.Etype)
+            self.e_file = self.dir + tokens[2]
             if self.verbose > 0:
                 print(self.Energy, self.Etype)
         elif (len(tokens) == 3):
+            self.e_file = None
             self.Energy = float(tokens[1])
             if (tokens[2].upper() == 'CBS-QB3'):
                 self.Etype = 'cbsqb3'
@@ -353,7 +362,7 @@ class Molecule:
             # Create rotor object for each hindered rotor
             self.rotors = []
             for i in range(self.numRotors):
-                self.rotors.append(Rotor(file_tokens[i], self.geom,
+                self.rotors.append(Rotor(self.dir + file_tokens[i], self.geom,
                                                 self.Mass, self.bonds,
                                                 int(sym_tokens[i+1]),
                                                 v_ho=float(tokens[i+1]) ))
@@ -711,7 +720,10 @@ class Molecule:
         misc_heading += '-'*(len(misc_heading)-1) + '\n\n'
         out_file.write(misc_heading)
 
-        out_file.write('Energy = %10.3e kcal/mol\n' % (self.Energy*ha_to_kcal))
+        if self.e_file != None:
+            out_file.write('Energy file: %s\n' % self.e_file)
+        out_file.write('Energy = %10.3e kcal/mol %s\n' %
+                       (self.Energy*ha_to_kcal, self.Etype))
         out_file.write('External Symmetry = ' + str(self.extSymm) + '\n')
         Iext = self.Iext.copy() * 1e23 * N_avo
         out_file.write('Principal Moments of Inertia (amu * ang.^2)= ' +
