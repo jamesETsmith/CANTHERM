@@ -78,4 +78,5 @@ class KnowValues(unittest.TestCase):
         self.assertAlmostEqual(s_ir[0], 1.7505080, places=(sig_fig-1) )
 
 if __name__ == "__main__":
+    print("Full Tests for Ethane")
     unittest.main()

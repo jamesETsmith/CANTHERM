@@ -62,5 +62,27 @@ class KnowValues(unittest.TestCase):
         self.assertAlmostEqual(cp_vib[0]/10, 1.5873404, places=(sig_fig-1) )
         self.assertAlmostEqual(s_vib[0]/10, 1.2057099, places=(sig_fig-1) )
 
+    def test4_kin(self):
+        print('\nTesting kinetics...')
+        rx = data.rx
+
+        # TST Rate Tests
+        self.assertAlmostEqual(rx.rates[0]*10, 1.0079000, places=(sig_fig-1) )
+        self.assertAlmostEqual(rx.rates[1]*10, 1.2223926, places=(sig_fig-1) )
+        self.assertAlmostEqual(rx.rates[2]/1e2, 2.7727886, places=(sig_fig-1) )
+        self.assertAlmostEqual(rx.rates[3]/1e4, 2.7434532, places=(sig_fig-1) )
+        self.assertAlmostEqual(rx.rates[4]/1e5, 5.8109805, places=(sig_fig-1) )
+        self.assertAlmostEqual(rx.rates[5]/1e7, 2.6668462, places=(sig_fig-1) )
+        self.assertAlmostEqual(rx.rates[6]/1e8, 2.7148873, places=(sig_fig-1) )
+        self.assertAlmostEqual(rx.rates[7]/1e9, 6.4290564, places=(sig_fig-1) )
+
+        # Test Fitted Arrhenius Params
+        self.assertAlmostEqual(rx.arrhenius_coeff/1e12, 2.678,
+                               places=(sig_fig-1) )
+        self.assertAlmostEqual(rx.arrhenius_exp, 0.125630, places=(sig_fig-1) )
+        self.assertAlmostEqual(rx.activation_energy, 18.203,
+                               places=(sig_fig-1) )
+
 if __name__ == "__main__":
+    print("Full Tests for H-Transf")
     unittest.main()

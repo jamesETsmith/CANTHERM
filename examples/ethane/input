@@ -3,6 +3,7 @@ TLIST
 7
 298.15 300 400 500 600 800 1000
 Scale 0.99
+ROOTDIR .
 
 !!! GS Ethane
 Mol 1

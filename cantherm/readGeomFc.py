@@ -100,7 +100,7 @@ def readInputFile(file, data, verbose):
         data.dir = line.split()[1] + '/'
     else:
         print('Specify root directory')
-        # exit(0)
+        exit(0)
 
     # read molecular data
     if (data.CalcType == 'Thermo'):
