@@ -214,7 +214,7 @@ class Rotor:
             for line in lines:
 
                 # Get pivot atoms
-                if re.search('D\s+\d', line):
+                if re.search('D \s+\d', line):
                     # print(line.split()) # TODO
                     splt = line.split()
                     self.dihedral = np.array([int(splt[1]), int(splt[2]),
@@ -233,14 +233,27 @@ class Rotor:
 
                 # Start of scan data
                 if re.match(' Summary of Optimized Potential Surface Scan', line):
-                    energy_offset = float(line.split()[7])
+                    if len(line.split()) == 6:
+                        energy_offset = 0
+                    elif len(line.split()) == 10:
+                        energy_offset = float(line.split()[7])
+                    else:
+                        print("Something isn't right with your PES energies")
+                        exit(0)
                     parsing_rotor = True
 
                 # Energies
                 if parsing_rotor:
                     if re.match('\s+Eigenvalues --', line):
-                        for e in line.split()[2:]:
-                            energies.append(float(e))
+                        # For G09
+                        if len(line.split()) == 3:
+                            for e in line.split()[-1].split('-')[1:]:
+                                energies.append(- float(e))
+
+                        # For G16
+                        else:
+                            for e in line.split()[2:]:
+                                energies.append(float(e))
 
                 # End of scan data
                 if parsing_rotor and re.match(' GradGradGradGradGradGradGradGradGradGradGradGradGradGradGradGradGradGrad', line):
@@ -685,30 +698,31 @@ class Rotor:
 def er_rotation(v1, v2):
     '''
     Euler-Rodrigues rotation of vector 1 to align with vector 2.
-
     Arguments:
         v1: vector that will be rotated
         v2: vector that we will rotate to (i.e. we will make v1 || to v2)
-
     Returns:
         r: 3x3 rotation matrix
     '''
 
     # Vector we will rotate about
     k = np.cross(v1,v2)
+    k /= la.norm(k)
+
     # Angle we need to rotate
-    th = np.arccos(np.dot(v1,v2)/(la.norm(v1)*la.norm(v2)))
+    th = np.arccos( np.dot(v1,v2)/(la.norm(v1)*la.norm(v2)) )
 
     # Euler/Rodrigues params
     # See https://en.wikipedia.org/wiki/Euler%E2%80%93Rodrigues_formula
-    a = np.cos(th/2)
-    b = k[0] * np.sin(th/2)
-    c = k[1] * np.sin(th/2)
-    d = k[2] * np.sin(th/2)
+    a = np.cos(th/2.)
+    b = k[0] * np.sin(th/2.)
+    c = k[1] * np.sin(th/2.)
+    d = k[2] * np.sin(th/2.)
 
-    r = np.zeros((3,3))
-    r[0,0]=a**2 + b**2 - c**2 - d**2; r[0,1]=2*(b*c-a*d); r[0,2]=2*(b*d+a*c);
-    r[1,0]=2*(b*c+a*d); r[1,1]=a**2 + c**2 - b**2 - d**2; r[1,2]=2*(c*d-a*b);
-    r[2,0]=2*(b*d-a*c); r[2,1]=2*(c*d+a*b); r[2,2]=a**2 + d**2 - b**2 - c**2;
+    print("CHECK %f = 1" % (a**2 + b**2 + c**2 + d**2))
+
+    r = np.array([[a*a+b*b-c*c-d*d, 2*(b*c-a*d), 2*(b*d+a*c)],
+                  [2*(b*c+a*d), a*a+c*c-b*b-d*d, 2*(c*d-a*b)],
+                  [2*(b*d-a*c), 2*(c*d+a*b), a*a+d*d-b*b-c*c]])
 
     return r

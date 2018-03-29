@@ -38,6 +38,7 @@ class CanTherm:
 
     '''
 
+    atom_E_methods = ['cbsqb3', 'g3', 'ccsdtf12', 'DF-LUCCSD(T)-F12', 'ub3lyp']
 
     # CBSQB3 E for H, N, O, C, P, Cl
     atomEcbsqb3 = {'H': -0.499818, 'N': -54.520543, 'O': -74.987624,
@@ -90,23 +91,24 @@ class CanTherm:
 
         # TODO Test this block and make sure see if it's even executing
         molecule = self.MoleculeList[0]
-        H = molecule.Energy
-        atoms = readGeomFc.getAtoms(molecule.Mass)
-        atomsH = 0.0
-        if molecule.Etype == 'cbsqb3':
-            atomE = self.atomEcbsqb3
-        if molecule.Etype == 'g3':
-            atomE = self.atomEg3
-        if molecule.Etype == 'ccsdtf12':
-            atomE = self.atomEccsdtf12
-        if molecule.Etype == 'DF-LUCCSD(T)-F12':
-            atomE = self.atomEccsdt_f12_tz
-        if molecule.Etype == 'ub3lyp':
-            atomE = self.atomEub3lyp
-        for atom in atoms:
-            H -= atomE[atom]
-            atomsH += self.atomH[atom]
-        H = H * ha_to_kcal + atomsH
+        if molecule.Etype in self.atom_E_methods:
+            H = molecule.Energy
+            atoms = readGeomFc.getAtoms(molecule.Mass)
+            atomsH = 0.0
+            if molecule.Etype == 'cbsqb3':
+                atomE = self.atomEcbsqb3
+            if molecule.Etype == 'g3':
+                atomE = self.atomEg3
+            if molecule.Etype == 'ccsdtf12':
+                atomE = self.atomEccsdtf12
+            if molecule.Etype == 'DF-LUCCSD(T)-F12':
+                atomE = self.atomEccsdt_f12_tz
+            if molecule.Etype == 'ub3lyp':
+                atomE = self.atomEub3lyp
+            for atom in atoms:
+                H -= atomE[atom]
+                atomsH += self.atomH[atom]
+            H = H * ha_to_kcal + atomsH
         #
         #     # if molecule.Etype == 'cbsqb3':
         #     #     b = 0
@@ -167,7 +169,7 @@ class CanTherm:
         oFile.write(hr + spacing + 'Thermodynamic Properties\n\n' + hr)
 
         for molecule in self.MoleculeList:
-            mol_header = 'Molecule %i\nDF-LUCCSD(T)-F12' % (self.MoleculeList.index(molecule) + 1)
+            mol_header = 'Molecule %i\n'%(self.MoleculeList.index(molecule) + 1)
             mol_header += '-'*(len(mol_header)-1) + '\n\n'
             oFile.write(mol_header)
             molecule.calculate_all_thermo(Temp,oFile)

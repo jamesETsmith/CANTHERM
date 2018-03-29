@@ -210,6 +210,8 @@ class Molecule:
                 self.Etype = 'g3'
             elif (tokens[3].upper() == 'UB3LYP'):
                 self.Etype = 'ub3lyp'
+            elif (tokens[3].upper() == 'RM062X'):
+                self.Etype = 'RM062X'
             elif (tokens[3].upper() == 'DF-LUCCSD(T)-F12'):
                 self.Etype= 'DF-LUCCSD(T)-F12'
             elif (tokens[3].upper() == 'UCCSD(T)-F12'):
@@ -221,12 +223,18 @@ class Molecule:
         elif (len(tokens) == 3):
             self.e_file = None
             self.Energy = float(tokens[1])
-            if (tokens[2].upper() == 'CBS-QB3'):
+            if (tokens[3].upper() == 'CBS-QB3'):
                 self.Etype = 'cbsqb3'
-            elif (tokens[2].upper() == 'G3'):
+            elif (tokens[3].upper() == 'G3'):
                 self.Etype = 'g3'
-            elif (tokens[2].upper() == 'UB3LYP'):
+            elif (tokens[3].upper() == 'UB3LYP'):
                 self.Etype = 'ub3lyp'
+            elif (tokens[3].upper() == 'RM062X'):
+                self.Etype = 'RM062X'
+            elif (tokens[3].upper() == 'DF-LUCCSD(T)-F12'):
+                self.Etype= 'DF-LUCCSD(T)-F12'
+            elif (tokens[3].upper() == 'UCCSD(T)-F12'):
+                self.Etype = 'UCCSD(T)-F12'
             if self.verbose > 0:
                 print(self.Etype.upper(), ' Energy: ', self.Energy)
         else:
@@ -354,6 +362,7 @@ class Molecule:
 
             for i in range(self.numRotors):
                 if self.verbose > 0:
+                    # print(self.Freq)
                     print("Removing hindered rotor frequency %s cm^-1 from the list of vibrational frequencies." % tokens[i+1])
                 rm_idx = self.Freq.index(float(tokens[i+1]))
                 self.hindFreq.append(self.Freq[rm_idx]) # Keep track of them

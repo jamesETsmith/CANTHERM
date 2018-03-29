@@ -426,7 +426,7 @@ def readEnergy(file, string):
 
 
     # Gaussian File
-    if tokens[-1] == 'log':
+    if tokens[-1] == 'log' or tokens[-1] == 'out':
         if string == 'cbsqb3':
             Energy = re.search('CBS-QB3 \(0 K\)= ' +
                                ' \s*([\-0-9.]+)', com).group(1)
@@ -435,6 +435,9 @@ def readEnergy(file, string):
 
         elif string == 'ub3lyp':
             Energy = re.findall("E\(UB3LYP\) = " + "\s*([\-0-9.]+)", com)[-1]
+
+        elif string == 'RM062X':
+            Energy = re.findall("E\(RM062X\) = " + "\s*([\-0-9.]+)", com)[-1]
 
     # Molpro File
     elif tokens[-1] == 'res':
