@@ -6,7 +6,7 @@ Scale 0.99
 ROOTDIR .
 
 !!! GS Ethane
-Mol 1
+Mol GS
 Nonlinear
 Geom FILE ethane.log
 FREQ FILE ethane.log

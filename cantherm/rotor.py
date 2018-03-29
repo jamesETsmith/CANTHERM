@@ -44,7 +44,6 @@ class Rotor:
         mass (np.array): 1D numpy array of floats for the masses, index matches
             atom number.
 
-
         natom (int): Number of atoms in molecule.
 
         bonds ([[int]]): 2D list of the bonds (atoms are the atom number - 1).
@@ -88,7 +87,7 @@ class Rotor:
         Make sure the atoms are in the same order as the original energy
     '''
 
-    def __init__(self, log_file, geom, masses, bonds, sym, v_ho=0):
+    def __init__(self, log_file, geom, masses, bonds, sym, label='', v_ho=0):
         # Member variables
         self.geom = geom # list
         self.masses = masses #np.array( [masses[i,0] for i in range(len(masses))] )
@@ -98,6 +97,7 @@ class Rotor:
         self.sym = sym
         self.e_levels = np.array([])
         self.v_ho = v_ho
+        self.label = label
 
         # Functions
         self.read_scan_data(self.log_file)
@@ -589,7 +589,7 @@ class Rotor:
         plt.ylabel('Energy / J')
         plt.legend()
         if show: plt.show()
-        plt.savefig('rotor_%.0f_cm-1.png' % self.v_ho)
+        plt.savefig('rotor_%s.png' % self.label)
         # plt.close('all')
 
 

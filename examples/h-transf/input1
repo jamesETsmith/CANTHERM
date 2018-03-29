@@ -6,7 +6,7 @@ TLIST
 Scale 0.99
 ROOTDIR .
 
-Mol 1
+Mol GS
 Nonlinear
 Geom FILE gs.log
 FREQ FILE gs.log
@@ -18,7 +18,7 @@ hydroxyl_rotor/hydroxyl_rotor.log methyl_rotor/methyl_rotor.log oxy_rotor/oxy_ro
 ROTORSYM 1 3 1
 ROTORFREQ 257.7802 248.0569 118.3452
 
-Mol 2
+Mol TS
 Nonlinear
 Geom FILE ts.log
 !Forcec FILE ts.log

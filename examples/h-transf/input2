@@ -6,7 +6,7 @@ TLIST
 Scale 0.99
 ROOTDIR .
 
-Mol 1
+Mol GS
 Nonlinear
 Geom FILE gs.log
 FREQ FILE gs.log
@@ -15,7 +15,7 @@ EXTSYM 1
 NELEC 2
 ROTORS 0
 
-Mol 2
+Mol TS
 Nonlinear
 Geom FILE ts.log
 !Forcec FILE ts.log

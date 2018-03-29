@@ -72,6 +72,8 @@ class Molecule:
 
         dir (string): Root directory for all FILEs listed in input.
 
+        name (string): Molecule label.
+
     '''
 
     def __init__(self, in_file, isTS, scale, verbose, root_dir):
@@ -87,6 +89,7 @@ class Molecule:
         self.rotors = []
         self.bonds = []
         self.Etype = ''
+        self.label = ''
 
         # Assign rest of attributes
         self.read_input()
@@ -99,11 +102,11 @@ class Molecule:
 
         file = self.input_file
         line = readGeomFc.readMeaningfulLine(file)
-        self.linearity = line.split()[0].upper
+        self.label = line.split()[-1]
 
         # read linearity
         line = readGeomFc.readMeaningfulLine(file)
-        linearlity = line.split()[0].upper
+        self.linearlity = line.split()[0].upper
 
         # read geometry
         line = readGeomFc.readMeaningfulLine(file)
@@ -371,9 +374,11 @@ class Molecule:
             # Create rotor object for each hindered rotor
             self.rotors = []
             for i in range(self.numRotors):
+                rotor_label = self.label + "_" + str(i+1)
                 self.rotors.append(Rotor(self.dir + file_tokens[i], self.geom,
                                                 self.Mass, self.bonds,
                                                 int(sym_tokens[i+1]),
+                                                label=rotor_label,
                                                 v_ho=float(tokens[i+1]) ))
 
 

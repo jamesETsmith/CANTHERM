@@ -1,7 +1,7 @@
 \documentclass[a4paper,12pt]{article}
 
 \title{CANTHERM}
-\author{Sandeep Sharma}
+\author{Sandeep Sharma and James Smith}
 \begin{document}
  \maketitle
 \tableofcontents
@@ -119,7 +119,7 @@ On the next line we specify the scale factor used for the frequencies after the 
 Then on the next line we specify the root directory for all of the files that will be used by the program. If all the files you wish to use are in you current working directly you should write \textbf{ROOTDIR} followed by a period. If they are somewhere else on your computer please specify where with an absolute path and \textit{do not leave a slash on the end of your path!}
 
 \subsection{Molecules}
-The first line of your molecule section must by \textbf{MOL} followed by a number indicating whether it is the first, second, third etc molecule in the input file. The next line must be either \textbf{LINEAR} or \textbf{NONLINEAR}. \underline{All of the attributes set or specified in this section will have to be specified for each molecule.} It is important to note that all of these keywords must appear \underline{IN ORDER}.
+The first line of your molecule section must by \textbf{MOL} followed by a label for the molecule. This will be used to identify the plot of the rotational PES which are saved in the current working directory (if the hindered rotor treatment is applied). The next line must be either \textbf{LINEAR} or \textbf{NONLINEAR}. \underline{All of the attributes set or specified in this section will have to be specified for each molecule.} It is important to note that all of these keywords must appear \underline{IN ORDER}. Make sure that all of the files you reference from your input have the atoms ordered consistently!
 
 \subsubsection{Geometry}
 The user can specify the geometry of a molecule with the keyword \textbf{GEOM} in two ways:
@@ -157,13 +157,9 @@ On the next line the user must then list the rotor PES scan files (keeping in mi
 
 On the following line, the user must specify the symmetry of each rotor after the keyword \textbf{ROTORSYM} and must do so in the order that the files appear above.
 
+Finally, the user must specify the frequency most closely associated with the hindered rotation, after the keyword \textbf{ROTOFREQ}. These frequency will be removed from the list of harmonic frequencies used to calculate the vibrational partition function.
 
-
-\subsection{}
-
-\begin{itemize}
-\item The next line gives information about hindered rotors. The first word is \textbf{Hindrot}, the next word is the number of hindered rotors , e.g. \textbf{5} and the next 5 lines give information about hindered rotors. To specify the hindered rotors one starts by assuming a rigid frame. This rigid frame will have rotors attached to it. Each rotor can in turn have other rotors attached to them. The rigid frame itself is given level 1 and contains all the atoms in the molecule. For example if we take an example of
-
-\end{itemize}
+\subsection{Kinetics}
+If you would like to calculate kinetics for a unimolecular reaction then you may include another molecule in your input file. The software treats the first molecule as the ground state and the second as the transition state. The procedure to specify the attributes of the transition state is the same as described above.
 
 \end{document}
