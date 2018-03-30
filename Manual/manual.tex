@@ -1,4 +1,11 @@
 \documentclass[a4paper,12pt]{article}
+\usepackage{xcolor}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily,
+  showstringspaces=false,
+  commentstyle=\color{red},
+  keywordstyle=\color{blue}
+}
 
 \title{CANTHERM}
 \author{Sandeep Sharma and James Smith}
@@ -11,7 +18,15 @@ CANTHERM is written in python and calculates the thermodynamic properties of sta
  \item Calculates enthalpy, entropy and heat capacities using Rigid Rotor Harmonic Oscillator approximation with correction for hindered rotors.
 \item Calculates the high pressure rate coefficients for a unimolecular reaction.
 \end{itemize}
+
 The manual first attempts to give some background theory and then goes on to give the instructions for making the input file. Finally a couple of example input files along with the output are given.
+
+\subsection{Dependencies}
+\begin{enumerate}
+  \item Numpy
+  \item Scipy
+  \item Matplotlib
+\end{enumerate}
 
 \section{Theory}
 Rigid Rotor Harmonic oscillator assumes separability of different modes of vibrations and interal/external rotations in a molecule. Each mode is then treated separately to calculate the partition function and subsequently the thermodynamic quantities from the partition functions. We treat each of the modes separately.
@@ -161,5 +176,14 @@ Finally, the user must specify the frequency most closely associated with the hi
 
 \subsection{Kinetics}
 If you would like to calculate kinetics for a unimolecular reaction then you may include another molecule in your input file. The software treats the first molecule as the ground state and the second as the transition state. The procedure to specify the attributes of the transition state is the same as described above.
+
+\section{Running Cantherm}
+The user can run Cantherm either programmatically or from the command line. At this time we recommend running from the command line with a text file input. The user can execute a job with the following command in a bash shell:
+
+\begin{lstlisting}[language=bash]
+python /path/to/CANTHERM/cantherm/cantherm.py input output
+\end{lstlisting}
+
+If running Cantherm in the command line you must specify the desired output file.
 
 \end{document}
