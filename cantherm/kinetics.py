@@ -275,7 +275,37 @@ class RxSystem:
             plt.ylabel("k / $s^{-1}$")
         plt.savefig(self.name+".png")
 
+    ############################################################################
 
+    def tabulate_tst_rates(self, comp_data=[], comp_labels=[]):
+
+        plt.figure()
+
+        plt.axis('tight')
+        plt.axis('off')
+
+        # Columns are the Temperatures and Rows are the specific reactions
+        cellText = []
+        for i in range(len(self.tst_rates)):
+            cellText.append(["%.3e" % x for x in self.tst_rates[i]])
+
+        # If applicatble append comparison data/labels
+        for i in range(len(comp_data)):
+            row = ["%.3e" % x for x in comp_data[i]]
+            row += ["-"]*(len(self.temps)-len(comp_data))
+            cellText.append(row)
+
+        # Row labels
+        rowLabels = self.outputs + comp_labels
+        if len(cellText) != len(rowLabels):
+            rowLabels += ['Comparison']*(len(cellText)-len(rowLabels))
+
+
+        # Add a table at the bottom of the axes
+        the_table = plt.table(cellText=cellText, rowLabels=rowLabels,
+                              colLabels=self.temps, loc='center')
+
+        plt.savefig(self.name+"_table"+".png", bbox_inches="tight")
 
 ################################################################################
 
@@ -302,6 +332,7 @@ def get_barriers(energy_files, outputs, plot=False,plot_name=''):
 
         gs_e = readEnergy(e_files[0][0], e_files[0][1])
         ts_e = readEnergy(e_files[1][0], e_files[1][1])
+        # print(gs_e, ts_e, e_files[0][1], e_files[1][1])
 
         # Barrier
         dE = ts_e - gs_e
