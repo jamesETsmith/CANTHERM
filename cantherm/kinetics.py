@@ -309,7 +309,8 @@ class RxSystem:
 
 ################################################################################
 
-def get_barriers(energy_files, outputs, plot=False,plot_name=''):
+def get_barriers(energy_files, outputs, plot=False, plot_name='', comp_data=[],
+                 comp_labels=[]):
     '''
     Collect the energy barrier data from the various final and possibly
     other intermediate eneriges, e.g. MP2 energies in a CCSD(T) calculation.
@@ -383,31 +384,46 @@ def get_barriers(energy_files, outputs, plot=False,plot_name=''):
             dE_ccsd = ts_ccsd_e - gs_ccsd_e
             barriers[0].append(dE_ccsd)
             barriers[1].append('RHF-UCCSD-F12a')
-            barriers[2].append( outputs[i])
+            barriers[2].append( outputs[i] )
 
         i += 1
 
     # print(barriers)
     # Plot the barrier heigts
     if plot:
-        ind = np.arange(len(barriers[0]))
+        all_bars = barriers[0] + comp_data
+        ind = np.arange(len(all_bars))
         wid = 0.35
+        colors = ['b']*(len(barriers[0])) + ['r']*len(comp_data)
 
         plt.figure()
-        plt.bar(ind, barriers[0][:], wid)
+        plt.bar(ind, all_bars, wid)
+
         # Label the height of the bars
-        for i in ind:
-            height = barriers[0][i]
-            plt.text(i + wid/4., 1.05*height, '%.5f' % height, ha='center')
+        for i in range(len(all_bars)):
+            height = all_bars[i]
+            plt.text(i + wid/4., 1.05*height, '%.5f' % height, ha='center', colors=colors)
+
+        # # Label the height of the bars for comparison data
+        # for i in range(len(comp_data)):
+        #     height = comp_data[i]
+        #     plt.text(i+len(barriers[0]) + wid/4., 1.05*height,
+        #              '%.5f' % height, ha='center')
 
         # Titles and ticks
+        # If no labels are present just say comparison
+        if len(comp_labels) != len(comp_data):
+            comp_labels += ['Comparison']*(len(comp_data)-len(comp_labels))
+
+        all_labels = barriers[1] + comp_labels
+
         plt.title('Barrier Heights as a Function of Method for %s' % plot_name)
-        plt.xticks(ind+wid/2., barriers[1][:], rotation=90)
+        plt.xticks(ind+wid/2., all_labels, rotation=90)
         plt.ylabel('Energy Barrier / Ha')
 
         # Formatting
-        plt.ylim( min(0,min(barriers[0][:])*1.25), max(barriers[0][:])*1.25 )
-        plt.xlim( ind[0]-1, ind[-1]+1 )
+        plt.ylim( min(0,min(all_bars)*1.25), max(all_bars)*1.25 )
+        plt.xlim( ind[0]-0.5, ind[-1]+1 )
         plt.tight_layout()
         plt.savefig(plot_name+ '_barrier_heights'+'.png')
         plt.close()
