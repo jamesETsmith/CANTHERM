@@ -21,7 +21,7 @@ manual.log
 Manual/manual.fdb_latexmk
 Manual/manual.fls
 Manual/manual.synctex.gz
-
+Manual/manual.pyg
 
 ### Batch Files ###
 submit.sh
@@ -31,3 +31,8 @@ summit.sh
 ### Examples Files ###
 *cantherm.log
 *chem.inp
+
+### Directories ###
+examples/ethane/RMG_compare
+examples/pvc/RMG_compare
+examples/h-transf/RMG_compare

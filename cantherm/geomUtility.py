@@ -24,8 +24,8 @@
 
 from numpy import *
 import pdb
-import readGeomFc
-from harmonics import *
+from cantherm import readGeomFc
+from cantherm.harmonics import *
 from scipy import *
 import random
 import math

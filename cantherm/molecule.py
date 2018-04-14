@@ -22,16 +22,16 @@
 ********************************************************************************
 '''
 
-import readGeomFc
-from harmonics import *
+from cantherm import readGeomFc
+from cantherm.harmonics import *
 from scipy import *
 import scipy.linalg
 #import random
-import geomUtility
+from cantherm import geomUtility
 import os
-from constants import *
+from cantherm.constants import *
 import numpy as np
-from rotor import *
+from cantherm.rotor import *
 
 class Molecule:
     '''

@@ -30,9 +30,9 @@ import matplotlib.pyplot as plt
 la = np.linalg
 
 ### CanTherm Modules ###
-from constants import *
+from cantherm.constants import *
 
-import readGeomFc
+from cantherm import readGeomFc
 
 class Rotor:
     '''

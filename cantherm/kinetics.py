@@ -25,7 +25,7 @@
 import math, re
 import numpy as np
 import matplotlib.pyplot as plt
-from constants import *
+from cantherm.constants import *
 from functools import reduce
 from cantherm import readGeomFc
 readEnergy = readGeomFc.readEnergy
@@ -71,6 +71,8 @@ class Reaction:
         self.tunneling = tunneling
         self.scale = scale
         self.rates = None
+        self.tunneling_coeff = None
+        self.q_ratio = None
         self.arrhenius_coeff = None
         self.activation_energy = None
         return
@@ -83,6 +85,8 @@ class Reaction:
             reaction at the given temperatures.
         '''
         self.rates = [0]*len(self.temp)
+        self.tunneling_coeff = [0]*len(self.temp)
+        self.q_ratio = [0]*len(self.temp)
 
         for i in range(len(self.temp)):
             t = self.temp[i]
@@ -90,6 +94,7 @@ class Reaction:
                 Q_react = self.reactants.calculate_Q(t)
                 Q_TS = self.ts.calculate_Q(t)
 
+            self.q_ratio[i] = (kb * t/ h) * (Q_TS/ Q_react)
             self.rates[i] = (kb * t/ h) * (Q_TS/ Q_react)
             self.rates[i] *= math.exp(-(self.ts.Energy - \
                                         self.reactants.Energy) * ha_to_kcal \
@@ -99,6 +104,7 @@ class Reaction:
             if self.tunneling == "Wigner":
                 kappa = wigner_correction(t, self.ts.imagFreq, self.scale)
                 self.rates[i] *= kappa
+                self.tunneling_coeff[i] = kappa
 
             # print("Test rate constant for T=%i \t %e" % (T,k_test*kappa[i]))
 
@@ -172,12 +178,18 @@ class Reaction:
         '''
 
         # Write TST header
-        kin_header = '%9s   %14s\n' % ('Temp. (K)', 'TST Rate (s^1)')
-        kin_header += '-'*9 + '   ' + '-'*14 + '\n\n'
+        kin_header = '%9s   %14s   %14s   %15s\n' % ('Temp. (K)',
+                                                    'Q Ratio (s^-1)',
+                                                    'k(TST) (s^-1)',
+                                                    'k(TST+T) (s^-1)')
+        kin_header += '-'*9 + '   ' + '-'*14 + '   ' + '-'*14 + '   ' + '-'*15 + '\n\n'
         out_file.write(kin_header)
 
         for i in range(len(self.temp)):
-            out_file.write("%9i   %14.3e\n"%(self.temp[i],self.rates[i]))
+            out_file.write("%9i   %14.3e   %14.3e   %15.3e\n"%(self.temp[i],
+                self.q_ratio[i],
+                self.rates[i]/self.tunneling_coeff[i],
+                self.rates[i]))
         out_file.write('\n')
 
         # Arrhenius Data
@@ -212,7 +224,9 @@ class RxSystem:
         self.a_coeffs = []
         self.a_exp = []
         self.ea = []
+        self.q_ratios = []
         self.tst_rates = []
+        self.tstt_rates = []
         self.energy_files = []
         self.barriers = []
 
@@ -226,18 +240,29 @@ class RxSystem:
             with open(filename, 'r') as f:
                 reading_kinetics = False
                 lines = f.readlines()
-                rates = []
+                rates_tstt = []
+                rates_tst = []
+                q_ratio = []
                 e_files = []
 
+                ctr = 0
                 for i in range(len(lines)):
                     if re.search('\s+Kinetic Properties*', lines[i]):
                         reading_kinetics = True
                         # i += 7
                         continue
+
+                    if reading_kinetics and ctr >= n_temps:
+                        reading_kinetics = False
+                        continue
+
                     if reading_kinetics:
-                        if len(lines[i].split()) == 2 and lines[i].split()[0] != '---------':
+                        if len(lines[i].split()) == 4 and lines[i].split()[0] != '---------':
                             # print(lines[i].split())
-                            rates.append(float(lines[i].split()[1]))
+                            q_ratio.append(float(lines[i].split()[1]))
+                            rates_tst.append(float(lines[i].split()[2]))
+                            rates_tstt.append(float(lines[i].split()[3]))
+                            ctr += 1
 
                     if len(lines[i].split(':')) > 0 and \
                         lines[i].split(':')[0] == 'Energy file':
@@ -248,7 +273,9 @@ class RxSystem:
                 self.energy_files.append(e_files)
                 # print(e_file)
                 # print(rates)
-                self.tst_rates.append(rates)
+                self.q_ratios.append(q_ratio)
+                self.tst_rates.append(rates_tst)
+                self.tstt_rates.append(rates_tstt)
 
 
 
@@ -281,13 +308,14 @@ class RxSystem:
 
         plt.figure()
 
-        plt.axis('tight')
+        # plt.axis('tight')
         plt.axis('off')
+        plt.grid('off')
 
         # Columns are the Temperatures and Rows are the specific reactions
         cellText = []
         for i in range(len(self.tst_rates)):
-            cellText.append(["%.3e" % x for x in self.tst_rates[i]])
+            cellText.append(["%.3e" % x for x in self.tstt_rates[i]])
 
         # If applicatble append comparison data/labels
         for i in range(len(comp_data)):
@@ -300,12 +328,47 @@ class RxSystem:
         if len(cellText) != len(rowLabels):
             rowLabels += ['Comparison']*(len(cellText)-len(rowLabels))
 
+        # Column labels
+        colLabels = ['%d (K)' % t for t in self.temps]
 
         # Add a table at the bottom of the axes
         the_table = plt.table(cellText=cellText, rowLabels=rowLabels,
-                              colLabels=self.temps, loc='center')
+                              colLabels=colLabels, loc='best')
 
-        plt.savefig(self.name+"_table"+".png", bbox_inches="tight")
+        plt.savefig(self.name+"_table"+".pdf", bbox_inches="tight")
+
+################################################################################
+
+    def tabulate_kinetics(self, labels, comp_data):
+
+        plt.figure()
+
+        # plt.axis('tight')
+        plt.axis('off')
+        plt.grid('off')
+
+        # Columns are the Temperatures and Rows are the specific reactions
+        cellText = []
+        for i in range(len(self.tst_rates)):
+            row = ['%.3e'%self.tst_rates[i][0],
+                    '%.3e'%self.tstt_rates[i][0],
+                    '%.3e'%comp_data]
+            if i == 0:
+                row[-1] = '-'
+            cellText.append(row)
+
+
+        # Row labels
+        rowLabels = labels
+
+        # Column labels
+        colLabels = ['TST (s^-1)', 'TST+T (s^-1)', 'V&P (s^-1)']
+
+        # Add a table at the bottom of the axes
+        the_table = plt.table(cellText=cellText, rowLabels=rowLabels,
+                              colLabels=colLabels, loc='best')
+
+        plt.savefig(self.name+"_table"+".pdf", bbox_inches="tight")
 
 ################################################################################
 
@@ -394,15 +457,15 @@ def get_barriers(energy_files, outputs, plot=False, plot_name='', comp_data=[],
         all_bars = barriers[0] + comp_data
         ind = np.arange(len(all_bars))
         wid = 0.35
-        colors = ['b']*(len(barriers[0])) + ['r']*len(comp_data)
+        colors = ['blue']*(len(barriers[0])) + ['red']*len(comp_data)
 
         plt.figure()
-        plt.bar(ind, all_bars, wid)
+        plt.bar(ind, all_bars, wid, align='edge', color=colors)
 
         # Label the height of the bars
         for i in range(len(all_bars)):
             height = all_bars[i]
-            plt.text(i + wid/4., 1.05*height, '%.5f' % height, ha='center', colors=colors)
+            plt.text(i + wid/4., 1.05*height, '%.5f' % height, ha='center')
 
         # # Label the height of the bars for comparison data
         # for i in range(len(comp_data)):
@@ -418,13 +481,14 @@ def get_barriers(energy_files, outputs, plot=False, plot_name='', comp_data=[],
         all_labels = barriers[1] + comp_labels
 
         plt.title('Barrier Heights as a Function of Method for %s' % plot_name)
-        plt.xticks(ind+wid/2., all_labels, rotation=90)
+        plt.xticks(ind+wid/2., all_labels, rotation=45)
         plt.ylabel('Energy Barrier / Ha')
 
         # Formatting
         plt.ylim( min(0,min(all_bars)*1.25), max(all_bars)*1.25 )
         plt.xlim( ind[0]-0.5, ind[-1]+1 )
         plt.tight_layout()
+        plt.axhline(0, color='black')
         plt.savefig(plot_name+ '_barrier_heights'+'.png')
         plt.close()
 

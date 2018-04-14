@@ -26,9 +26,9 @@
 
 import os
 from numpy import *
-from rotor import *
+from cantherm.rotor import *
 import pdb
-from molecule import *
+from cantherm.molecule import *
 import re
 import shutil
 import getopt

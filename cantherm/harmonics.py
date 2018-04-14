@@ -24,7 +24,7 @@
 
 from numpy import *
 import pdb
-import readGeomFc
+from cantherm import readGeomFc
 import math
 
 

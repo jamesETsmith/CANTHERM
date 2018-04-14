@@ -23,13 +23,13 @@
 '''
 
 import sys
-import readGeomFc
+from cantherm import readGeomFc
 import pdb
 import math
 from numpy import *
 from scipy import *
-from constants import *
-import kinetics
+from cantherm.constants import *
+from cantherm import kinetics
 
 
 
