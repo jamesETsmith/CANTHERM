@@ -27,12 +27,12 @@ S cal/(mol K) 1.714244
 
 import unittest
 import os
-import cantherm.cantherm as cantherm
+import cantherm.main as main
 
 sig_fig = 4
 
 os.chdir('../examples/ethane/')
-data = cantherm.CanTherm(input_filename = 'input', verbose=0)
+data = main.CanTherm(input_filename = 'input', verbose=0)
 data.run()
 gs = data.MoleculeList[0]
 

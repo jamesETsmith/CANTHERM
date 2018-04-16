@@ -82,11 +82,11 @@ Hindered Rotor with Harmonic Freq:   307.71
     Fourier series coefficients (J):
     V_0 = 3.407e-16
       Cosine Coeffs.     Sine Coeffs.
-           1.241e-23        5.473e-32
-           1.241e-23       -2.040e-32
-          -9.360e-21        1.692e-32
-           1.241e-23        1.686e-32
-           1.241e-23       -2.272e-32
+           1.241e-23        5.601e-32
+           1.241e-23       -1.070e-32
+          -9.360e-21       -5.393e-33
+           1.241e-23       -1.966e-32
+           1.241e-23       -1.005e-32
 
 
     Reduced moment of inertia (kg*m^2): 2.604e-47
