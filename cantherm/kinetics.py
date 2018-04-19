@@ -25,11 +25,12 @@
 import math, re
 import numpy as np
 import matplotlib.pyplot as plt
-from cantherm.constants import *
 from functools import reduce
-from cantherm import readGeomFc
-readEnergy = readGeomFc.readEnergy
 
+from cantherm.constants import *
+from cantherm import readGeomFc
+
+readEnergy = readGeomFc.readEnergy
 la = np.linalg
 
 class Reaction:

@@ -32,8 +32,6 @@ la = np.linalg
 ### CanTherm Modules ###
 from cantherm.constants import *
 
-from cantherm import readGeomFc
-
 class Rotor:
     '''
     Attributes:

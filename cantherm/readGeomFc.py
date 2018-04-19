@@ -24,14 +24,11 @@
 ********************************************************************************
 '''
 
-import os
-from numpy import *
-from cantherm.rotor import *
-import pdb
-from cantherm.molecule import *
-import re
-import shutil
-import getopt
+import os, re
+import numpy as np
+
+from cantherm import rotor
+from cantherm import molecule
 
 
 def readInputFile(file, data, verbose):
@@ -112,10 +109,12 @@ def readInputFile(file, data, verbose):
 
     for i in range(numMol):
         if data.ReacType == 'Unimol' and i == 1 or data.ReacType == 'Bimol' and i == 2:
-            molecule = Molecule(file, True, data.scale, verbose, data.dir)
+            molec = molecule.Molecule(file, True, data.scale, verbose,
+                                        data.dir)
         else:
-            molecule = Molecule(file, False, data.scale, verbose, data.dir)
-        data.MoleculeList.append(molecule)
+            molec = molecule.Molecule(file, False, data.scale, verbose,
+                                        data.dir)
+        data.MoleculeList.append(molec)
     return
 
 
@@ -179,7 +178,7 @@ def readGeneralInertia(file, Mass):
         atomsList = []
         for atoms in tokens[3:]:
             atomsList.append(int(atoms))
-        rotor = Rotor(atomsList, pivot2, level, symm, Mass)
+        rotor = rotor.Rotor(atomsList, pivot2, level, symm, Mass)
         rotor.parent = parentLevel
         # print rotor.symm, rotor.pivot2, rotor.pivotAtom, rotor.atomsList
         rotors.append(rotor)
@@ -209,9 +208,9 @@ def readGeom(file):
     for j in range(len(geomLines)):
         line = geomLines[j]
         tokens = line.split()
-        geom[j, 0] = double(tokens[3])
-        geom[j, 1] = double(tokens[4])
-        geom[j, 2] = double(tokens[5])
+        geom[j, 0] = float(tokens[3])
+        geom[j, 1] = float(tokens[4])
+        geom[j, 2] = float(tokens[5])
         if (int(tokens[1]) == 6):
             Mass[j] = 12.0
         if (int(tokens[1]) == 8):
@@ -271,9 +270,9 @@ def readGeomFc(file):
     for j in range(len(geomLines)):
         line = geomLines[j]
         tokens = line.split()
-        geom[j, 0] = double(tokens[3])
-        geom[j, 1] = double(tokens[4])
-        geom[j, 2] = double(tokens[5])
+        geom[j, 0] = float(tokens[3])
+        geom[j, 1] = float(tokens[4])
+        geom[j, 2] = float(tokens[5])
         if (int(tokens[1]) == 6):
             Mass[j] = 12.0
         if (int(tokens[1]) == 8):
@@ -342,9 +341,9 @@ def readFc(file):
     for j in range(len(geomLines)):
         line = geomLines[j]
         tokens = line.split()
-        geom[j, 0] = double(tokens[3])
-        geom[j, 1] = double(tokens[4])
-        geom[j, 2] = double(tokens[5])
+        geom[j, 0] = float(tokens[3])
+        geom[j, 1] = float(tokens[4])
+        geom[j, 2] = float(tokens[5])
         if (int(tokens[1]) == 6):
             Mass[j] = 12.0
         if (int(tokens[1]) == 8):
