@@ -43,6 +43,11 @@ kcal_to_kj = 4.184 # kJ/kcal
 kj_to_kcal = 1.0/kcal_to_kj
 cal_to_j = 4.184 # J/cal
 j_to_cal = 1/cal_to_j # cal/J
-ha_to_j = 4.359744650e-18 # J/ha
+ha_to_j = 4.359744650e-18 # J/Ha
 # ha_to_kj = ha_to
+ha_to_ev = 27.212 #eV/Ha
+kcal_to_ev = 0.043363 #eV mol/kcal
+cal_to_ev = 0.000043363 #eV mol/cal
+
+### Other Conversions ###
 b0_to_m = 5.29177e-11 # bohr/m

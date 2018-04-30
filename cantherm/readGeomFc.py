@@ -187,6 +187,7 @@ def readGeneralInertia(file, Mass):
 
 
 def readGeom(file):
+    # print("HEREHEREHERE") # TODO
     lines = file.readlines()
     lines.reverse()
 # read geometries
@@ -213,18 +214,94 @@ def readGeom(file):
         geom[j, 2] = float(tokens[5])
         if (int(tokens[1]) == 6):
             Mass[j] = 12.0
-        if (int(tokens[1]) == 8):
+        elif (int(tokens[1]) == 8):
             Mass[j] = 15.99491
-        if (int(tokens[1]) == 1):
+        elif (int(tokens[1]) == 1):
             Mass[j] = 1.00783
-        if (int(tokens[1]) == 7):
+        elif (int(tokens[1]) == 7):
             Mass[j] = 14.0031
-        if (int(tokens[1]) == 17):
+        elif (int(tokens[1]) == 17):
             Mass[j] = 34.96885
-        if (int(tokens[1]) == 16):
+        elif (int(tokens[1]) == 16):
             Mass[j] = 31.97207
-        if (int(tokens[1]) == 9):
+        elif (int(tokens[1]) == 9):
             Mass[j] = 18.99840
+
+        elif (int(tokens[1]) == 13):
+            Mass[j] = 26.98153853
+        elif (int(tokens[1]) == 14):
+            Mass[j] = 27.97692653465
+        elif (int(tokens[1]) == 15):
+            Mass[j] =30.97376199842
+
+        elif (int(tokens[1]) == 18):
+            Mass[j] = 35.96754510
+        elif (int(tokens[1]) == 19):
+            Mass[j] =38.9637064864
+        elif (int(tokens[1]) == 20):
+            Mass[j] = 39.962590863
+        elif (int(tokens[1]) == 21):
+            Mass[j] = 44.95590828
+        elif (int(tokens[1]) == 22):
+            Mass[j] = 45.95262772
+        elif (int(tokens[1]) == 23):
+            Mass[j] =49.94715601
+        elif (int(tokens[1]) == 24):
+            Mass[j] = 49.94604183
+        elif (int(tokens[1]) == 25):
+            Mass[j] = 54.93804391
+        elif (int(tokens[1]) == 26):
+            Mass[j] = 53.93960899
+        elif (int(tokens[1]) == 27):
+            Mass[j] = 58.93319429
+        elif (int(tokens[1]) == 28):
+            Mass[j] = 57.93534241
+        elif (int(tokens[1]) == 29):
+            Mass[j] = 62.92959772
+        elif (int(tokens[1]) == 30):
+            Mass[j] = 63.92914201
+        elif (int(tokens[1]) == 31):
+            Mass[j] = 68.9255735
+        elif (int(tokens[1]) == 32):
+            Mass[j] = 69.92424875
+        elif (int(tokens[1]) == 33):
+            Mass[j] = 74.92159457
+        elif (int(tokens[1]) == 34):
+            Mass[j] = 73.922475934
+        elif (int(tokens[1]) == 35):
+            Mass[j] = 78.9183376
+        elif (int(tokens[1]) == 36):
+            Mass[j] = 77.9203649
+        elif (int(tokens[1]) == 37):
+            Mass[j] = 84.9117897379
+        elif (int(tokens[1]) == 38):
+            Mass[j] = 83.9134191
+        elif (int(tokens[1]) == 39):
+            Mass[j] = 88.9058403
+        elif (int(tokens[1]) == 40):
+            Mass[j] = 89.9046977
+        elif (int(tokens[1]) == 41):
+            Mass[j] = 92.906373
+        elif (int(tokens[1]) == 42):
+            Mass[j] = 91.90680796
+        elif (int(tokens[1]) == 43):
+            Mass[j] = 96.9063667
+        elif (int(tokens[1]) == 44):
+            Mass[j] = 95.90759025
+        elif (int(tokens[1]) == 45):
+            Mass[j] = 102.905498
+        elif (int(tokens[1]) == 46):
+            Mass[j] = 101.9056022
+        elif (int(tokens[1]) == 47):
+            Mass[j] = 106.9050916
+        elif (int(tokens[1]) == 48):
+            Mass[j] = 105.9064599
+        elif (int(tokens[1]) == 49):
+            Mass[j] = 112.90406184
+        elif (int(tokens[1]) == 50):
+            Mass[j] = 111.90482387
+        else:
+            print("ATOM NOT FOUND WITH TOKEN: %s" % tokens[1])
 
     # Read the bonds
     bond_ind = lines.index('                           !    Initial Parameters    !\n')
@@ -528,3 +605,26 @@ def getAtoms(Mass):
             atoms[j] = 'F'
         j = j + 1
     return atoms
+
+def read_dipole(dipole_file):
+    '''
+    Returns the dipole and its magnitude in Debye.
+    '''
+
+    with open(dipole_file, 'r') as f:
+        lines = f.readlines()
+        n_lines = len(lines)
+
+        magn = 0
+        dip = np.zeros((3,))
+
+        for i in range(n_lines):
+            if ' Electric dipole moment (dipole orientation)' in lines[n_lines-i-1]:
+                magn= float(lines[n_lines-i+2].split()[2].replace('D', 'E'))
+                dip[0] = float(lines[n_lines-i+3].split()[2].replace('D', 'E'))
+                dip[1] = float(lines[n_lines-i+4].split()[2].replace('D', 'E'))
+                dip[2] = float(lines[n_lines-i+5].split()[2].replace('D', 'E'))
+                break
+
+        # print(magn, dip) TODO
+        return magn, dip # in Debye

@@ -87,24 +87,25 @@ class CanTherm:
 
         # TODO Test this block and make sure see if it's even executing
         molecule = self.MoleculeList[0]
-        if molecule.Etype in self.atom_E_methods:
-            H = molecule.Energy
-            atoms = readGeomFc.getAtoms(molecule.Mass)
-            atomsH = 0.0
-            if molecule.Etype == 'cbsqb3':
-                atomE = self.atomEcbsqb3
-            if molecule.Etype == 'g3':
-                atomE = self.atomEg3
-            if molecule.Etype == 'ccsdtf12':
-                atomE = self.atomEccsdtf12
-            if molecule.Etype == 'DF-LUCCSD(T)-F12':
-                atomE = self.atomEccsdt_f12_tz
-            if molecule.Etype == 'ub3lyp':
-                atomE = self.atomEub3lyp
-            for atom in atoms:
-                H -= atomE[atom]
-                atomsH += self.atomH[atom]
-            H = H * ha_to_kcal + atomsH
+        #TODO
+        # if molecule.Etype in self.atom_E_methods:
+        #     H = molecule.Energy
+        #     atoms = readGeomFc.getAtoms(molecule.Mass)
+        #     atomsH = 0.0
+        #     if molecule.Etype == 'cbsqb3':
+        #         atomE = self.atomEcbsqb3
+        #     if molecule.Etype == 'g3':
+        #         atomE = self.atomEg3
+        #     if molecule.Etype == 'ccsdtf12':
+        #         atomE = self.atomEccsdtf12
+        #     if molecule.Etype == 'DF-LUCCSD(T)-F12':
+        #         atomE = self.atomEccsdt_f12_tz
+        #     if molecule.Etype == 'ub3lyp':
+        #         atomE = self.atomEub3lyp
+        #     for atom in atoms:
+        #         H -= atomE[atom]
+        #         atomsH += self.atomH[atom]
+        #     H = H * ha_to_kcal + atomsH
         #
         #     # if molecule.Etype == 'cbsqb3':
         #     #     b = 0

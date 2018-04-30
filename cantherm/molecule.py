@@ -72,9 +72,11 @@ class Molecule:
 
         name (string): Molecule label.
 
+        calc_complete (bool): True if calculation completed correctly.
+
     '''
 
-    def __init__(self, in_file, isTS, scale, verbose, root_dir):
+    def __init__(self, in_file, isTS, scale, verbose, root_dir, txt_input=True):
         self.input_file = in_file
         self.TS = isTS
         self.scale = scale
@@ -88,10 +90,13 @@ class Molecule:
         self.bonds = []
         self.Etype = ''
         self.label = ''
+        self.calc_complete = True
 
         # Assign rest of attributes
-        self.read_input()
-
+        if txt_input:
+            self.read_input()
+        else:
+            self.read_log(in_file) #TODO this is not a great way to do this
 
     def read_input(self):
         '''
@@ -390,6 +395,57 @@ class Molecule:
         #     self.bonds.append(float(bond))
 
 
+        ### end of read_input()
+
+    def read_log(self, log_file):
+        '''
+        Read all molecular data from single G16 log file.
+
+        Arguments:
+
+            log_file (string): Path to g16 log file. (Use absolute if possible).
+
+        '''
+
+        with open(log_file, 'r') as f:
+            # Read geometry, mass, and bonds
+            (self.geom, self.Mass, self.bonds) = readGeomFc.readGeom(f)
+            self.calculateMomInertia()
+
+        # TODO
+        # Read frequencies
+        freq_raw = readGeomFc.read_freq(log_file)
+        if len(freq_raw) == 0 and self.Mass.size != 1:
+            self.calc_complete = False
+            return
+        for freq in freq_raw:
+            if freq < 0 and self.TS:
+                self.imagFreq = freq
+            elif freq < 0 and self.TS != True:
+                self.calc_complete = False
+                return
+            else:
+                self.Freq.append(freq)
+
+        # TODO make this more flexible
+        # Read energy
+        self.Etype = 'ub3lyp'
+        self.Energy = readGeomFc.readEnergy(log_file, self.Etype)
+        self.e_file = log_file
+
+        # Dipole
+        # TODO add doc. for this in class header
+        self.dip_magn, self.dip = readGeomFc.read_dipole(log_file) # in Debye
+
+        # Misc
+        self.extSymm = 1
+        self.nelec = 2
+
+        #TODO Add capability to handle rotors.
+        self.numRotors = 0
+
+
+
     ############################################################################
     ### Primary Functions ######################################################
     ############################################################################
@@ -480,7 +536,7 @@ class Molecule:
             # Ideal Gas Translational Modes
             # See Tuckerman, Stat. Mech.: Theory and Simulation section 5.6
             if mode_type == 'trans':
-                mass = sum(self.Mass) / 1e3 / N_avo # Mass in kg / molecule
+                mass = np.sum(self.Mass) / 1e3 / N_avo # Mass in kg / molecule
                 Q_T = ((2 * np.pi * mass)/h**2)**1.5/101325 * (kb*T)**2.5
                 H_T = 5.0/2.0 * R_kcal * T
                 Cp_T = 5.0/2.0 * R_cal
@@ -490,12 +546,15 @@ class Molecule:
             # Rigid Rotor Rotational Modes
             elif mode_type == 'rot':
                 sigma = self.extSymm
-                Iext = self.Iext
+                Iext = self.Iext.copy()
+                Iext[Iext == 0.0] = 1 # Prevents underflow if rotational symm
+                                      # shows up TODO
                 Q_T = np.power(np.pi * Iext[0] * Iext[1] * Iext[2], 0.5)/sigma
                 Q_T *= np.power(8.0 * np.pi**2 * kb * T / h**2, 3./2.)
                 # print(Q_T)
                 H_T = 3.0/2.0 * R_kcal * T
                 Cp_T = 3.0/2.0 * R_cal
+                # print(Iext, Q_T, sigma, Q_T/sigma) TODO
                 S_T = H_T * 1e3 / T + R_cal * np.log(Q_T)
 
 
@@ -594,8 +653,9 @@ class Molecule:
         Cp = [cp_tr[i]+cp_vib[i]+cp_rot[i]+cp_ir[i] for i in range(len(Temp))]
         S = [s_tr[i]+s_vib[i]+s_rot[i]+s_ir[i] for i in range(len(Temp))]
 
-        self.print_thermo_heading(oFile, 'Total Thermo. Contributions')
-        self.print_thermo_contributions(oFile, Temp, Q, H, Cp, S)
+        if oFile != False:
+            self.print_thermo_heading(oFile, 'Total Thermo. Contributions')
+            self.print_thermo_contributions(oFile, Temp, Q, H, Cp, S)
 
         return Q, H, Cp, S
 

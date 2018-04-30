@@ -12,3 +12,8 @@ python h-transf_test.py
 echo
 echo
 python pvc_test.py
+
+# Programmatic H-Transf Tests (Thermo.)
+echo
+echo
+python programmatic.py
