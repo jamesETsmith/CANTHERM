@@ -300,6 +300,78 @@ def readGeom(file):
             Mass[j] = 112.90406184
         elif (int(tokens[1]) == 50):
             Mass[j] = 111.90482387
+        elif (int(tokens[1]) == 51):
+            Mass[j] = 120.903812
+        elif (int(tokens[1]) == 52):
+            Mass[j] = 119.9040593
+        elif (int(tokens[1]) == 53):
+            Mass[j] = 126.9044719
+        elif (int(tokens[1]) == 54):
+            Mass[j] = 123.905892
+        elif (int(tokens[1]) == 55):
+            Mass[j] = 132.905451961
+        elif (int(tokens[1]) == 56):
+            Mass[j] = 129.9063207
+        elif (int(tokens[1]) == 57):
+            Mass[j] = 137.9071149
+        elif (int(tokens[1]) == 58):
+            Mass[j] = 135.90712921
+        elif (int(tokens[1]) == 59):
+            Mass[j] = 140.9076576
+        elif (int(tokens[1]) == 60):
+            Mass[j] = 141.907729
+        elif (int(tokens[1]) == 61):
+            Mass[j] = 144.9127559
+        elif (int(tokens[1]) == 62):
+            Mass[j] = 143.9120065
+        elif (int(tokens[1]) == 63):
+            Mass[j] = 150.9198578
+        elif (int(tokens[1]) == 64):
+            Mass[j] = 151.9197995
+        elif (int(tokens[1]) == 65):
+            Mass[j] = 158.9253547
+        elif (int(tokens[1]) == 66):
+            Mass[j] = 155.9242847
+        elif (int(tokens[1]) == 67):
+            Mass[j] = 164.9303288
+        elif (int(tokens[1]) == 68):
+            Mass[j] = 161.9287884
+        elif (int(tokens[1]) == 69):
+            Mass[j] = 168.9342179
+        elif (int(tokens[1]) == 70):
+            Mass[j] = 167.9338896
+        elif (int(tokens[1]) == 71):
+            Mass[j] = 174.9407752
+        elif (int(tokens[1]) == 72):
+            Mass[j] = 173.9400461
+        elif (int(tokens[1]) == 73):
+            Mass[j] = 179.9474648
+        elif (int(tokens[1]) == 74):
+            Mass[j] = 179.9467108
+        elif (int(tokens[1]) == 75):
+            Mass[j] = 184.9529545
+        elif (int(tokens[1]) == 76):
+            Mass[j] = 183.9524885
+        elif (int(tokens[1]) == 77):
+            Mass[j] = 190.9605893
+        elif (int(tokens[1]) == 78):
+            Mass[j] = 189.9599297
+        elif (int(tokens[1]) == 79):
+            Mass[j] = 196.96656879
+        elif (int(tokens[1]) == 80):
+            Mass[j] = 195.9658326
+        elif (int(tokens[1]) == 81):
+            Mass[j] = 202.9723446
+        elif (int(tokens[1]) == 82):
+            Mass[j] = 203.973044
+        elif (int(tokens[1]) == 83):
+            Mass[j] = 208.9803991
+        elif (int(tokens[1]) == 84):
+            Mass[j] = 208.9824308
+        elif (int(tokens[1]) == 85):
+            Mass[j] = 209.9871479
+        elif (int(tokens[1]) == 86):
+            Mass[j] = 210.9906011
         else:
             print("ATOM NOT FOUND WITH TOKEN: %s" % tokens[1])
 

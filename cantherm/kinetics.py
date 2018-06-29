@@ -33,6 +33,7 @@ from cantherm import readGeomFc
 readEnergy = readGeomFc.readEnergy
 la = np.linalg
 
+
 class Reaction:
     '''
     Attributes:
@@ -61,8 +62,15 @@ class Reaction:
 
     '''
 
-    def __init__(self, reactants, ts, temp, calc_type='CBS-QB3',
-                 reac_type='Unimol', products=[], tunneling=None, scale=0.99):
+    def __init__(self,
+                 reactants,
+                 ts,
+                 temp,
+                 calc_type='CBS-QB3',
+                 reac_type='Unimol',
+                 products=[],
+                 tunneling=None,
+                 scale=0.99):
         self.reactants = reactants
         self.ts = ts
         self.temp = temp
@@ -85,9 +93,9 @@ class Reaction:
             Calculates the transition state theory rate constants for the
             reaction at the given temperatures.
         '''
-        self.rates = [0]*len(self.temp)
-        self.tunneling_coeff = [0]*len(self.temp)
-        self.q_ratio = [0]*len(self.temp)
+        self.rates = [0] * len(self.temp)
+        self.tunneling_coeff = [0] * len(self.temp)
+        self.q_ratio = [0] * len(self.temp)
 
         for i in range(len(self.temp)):
             t = self.temp[i]
@@ -95,12 +103,11 @@ class Reaction:
                 Q_react = self.reactants.calculate_Q(t)
                 Q_TS = self.ts.calculate_Q(t)
 
-            self.q_ratio[i] = (kb * t/ h) * (Q_TS/ Q_react)
-            self.rates[i] = (kb * t/ h) * (Q_TS/ Q_react)
+            self.q_ratio[i] = (kb * t / h) * (Q_TS / Q_react)
+            self.rates[i] = (kb * t / h) * (Q_TS / Q_react)
             self.rates[i] *= math.exp(-(self.ts.Energy - \
                                         self.reactants.Energy) * ha_to_kcal \
                                         / R_kcal / t)
-
 
             if self.tunneling == "Wigner":
                 kappa = wigner_correction(t, self.ts.imagFreq, self.scale)
@@ -108,7 +115,6 @@ class Reaction:
                 self.tunneling_coeff[i] = kappa
 
             # print("Test rate constant for T=%i \t %e" % (T,k_test*kappa[i]))
-
 
     ############################################################################
 
@@ -131,17 +137,16 @@ class Reaction:
         if self.rates == None: self.calc_TST_rates()
 
         # Construct C
-        c = np.ones( (len(self.temp),3) )
-        c[:,1] = np.log(np.array(self.temp)/1000)
-        c[:,-1] = 1./np.array(self.temp)
+        c = np.ones((len(self.temp), 3))
+        c[:, 1] = np.log(np.array(self.temp) / 1000)
+        c[:, -1] = 1. / np.array(self.temp)
         b = np.log(self.rates)
 
-        x = reduce(np.dot, (la.inv(np.dot(c.T,c)), c.T, b ))
+        x = reduce(np.dot, (la.inv(np.dot(c.T, c)), c.T, b))
 
         self.arrhenius_coeff = np.exp(x[0])
         self.arrhenius_exp = x[1]
-        self.activation_energy = - x[-1] * R_kcal
-
+        self.activation_energy = -x[-1] * R_kcal
 
     ############################################################################
 
@@ -156,19 +161,19 @@ class Reaction:
         if self.arrhenius_coeff == None:
             self.fit_arrhenius()
 
-        t_0 = 1000 #np.min(self.temp) # Minimum temp in user specified range
-        t_inv = 1.0/np.linspace(self.temp[0], self.temp[-1], 1000)
+        t_0 = 1000  #np.min(self.temp) # Minimum temp in user specified range
+        t_inv = 1.0 / np.linspace(self.temp[0], self.temp[-1], 1000)
 
-        fit_k = np.log(1/(t_inv * t_0)) * self.arrhenius_exp
+        fit_k = np.log(1 / (t_inv * t_0)) * self.arrhenius_exp
         fit_k += np.log(self.arrhenius_coeff)
-        fit_k -= self.activation_energy*t_inv/R_kcal
+        fit_k -= self.activation_energy * t_inv / R_kcal
 
         plt.figure()
-        plt.scatter(1./np.array(self.temp), np.log(self.rates),label="TST Data")
+        plt.scatter(
+            1. / np.array(self.temp), np.log(self.rates), label="TST Data")
         plt.plot(t_inv, fit_k, 'r', label="Fitted Data")
         plt.legend()
         plt.show()
-
 
     ############################################################################
 
@@ -179,23 +184,21 @@ class Reaction:
         '''
 
         # Write TST header
-        kin_header = '%9s   %14s   %14s   %15s\n' % ('Temp. (K)',
-                                                    'Q Ratio (s^-1)',
-                                                    'k(TST) (s^-1)',
-                                                    'k(TST+T) (s^-1)')
-        kin_header += '-'*9 + '   ' + '-'*14 + '   ' + '-'*14 + '   ' + '-'*15 + '\n\n'
+        kin_header = '%9s   %14s   %14s   %15s\n' % (
+            'Temp. (K)', 'Q Ratio (s^-1)', 'k(TST) (s^-1)', 'k(TST+T) (s^-1)')
+        kin_header += '-' * 9 + '   ' + '-' * 14 + '   ' + '-' * 14 + '   ' + '-' * 15 + '\n\n'
         out_file.write(kin_header)
 
         for i in range(len(self.temp)):
-            out_file.write("%9i   %14.3e   %14.3e   %15.3e\n"%(self.temp[i],
-                self.q_ratio[i],
-                self.rates[i]/self.tunneling_coeff[i],
-                self.rates[i]))
+            out_file.write(
+                "%9i   %14.3e   %14.3e   %15.3e\n" %
+                (self.temp[i], self.q_ratio[i],
+                 self.rates[i] / self.tunneling_coeff[i], self.rates[i]))
         out_file.write('\n')
 
         # Arrhenius Data
         arr_header = 'Fitted Arrhenius Data\n'
-        arr_header += '-'*(len(arr_header) -1) + '\n\n'
+        arr_header += '-' * (len(arr_header) - 1) + '\n\n'
         arr_eqn = '\log{k} = \log{A} + n \log{T/1000} - frac{E_a}{R T}\n\n'
         out_file.write(arr_header + arr_eqn)
         out_file.write('A = %.3e s^1\n' % self.arrhenius_coeff)
@@ -203,11 +206,10 @@ class Reaction:
         out_file.write('E_a = %.3f kcal/mol\n' % self.activation_energy)
 
 
-
 ################################################################################
 
-class RxSystem:
 
+class RxSystem:
     def __init__(self, outputs, temps, name):
         '''
         Arguments:
@@ -230,7 +232,6 @@ class RxSystem:
         self.tstt_rates = []
         self.energy_files = []
         self.barriers = []
-
 
     ############################################################################
 
@@ -258,7 +259,8 @@ class RxSystem:
                         continue
 
                     if reading_kinetics:
-                        if len(lines[i].split()) == 4 and lines[i].split()[0] != '---------':
+                        if len(lines[i].split()
+                               ) == 4 and lines[i].split()[0] != '---------':
                             # print(lines[i].split())
                             q_ratio.append(float(lines[i].split()[1]))
                             rates_tst.append(float(lines[i].split()[2]))
@@ -268,8 +270,10 @@ class RxSystem:
                     if len(lines[i].split(':')) > 0 and \
                         lines[i].split(':')[0] == 'Energy file':
                         # Add the file name and the energy type
-                        e_files.append([lines[i].split(':')[1].strip(),
-                                        lines[i+1].split()[-1]])
+                        e_files.append([
+                            lines[i].split(':')[1].strip(),
+                            lines[i + 1].split()[-1]
+                        ])
 
                 self.energy_files.append(e_files)
                 # print(e_file)
@@ -277,8 +281,6 @@ class RxSystem:
                 self.q_ratios.append(q_ratio)
                 self.tst_rates.append(rates_tst)
                 self.tstt_rates.append(rates_tstt)
-
-
 
     ############################################################################
 
@@ -301,7 +303,7 @@ class RxSystem:
             plt.ylabel("ln(k)")
         else:
             plt.ylabel("k / $s^{-1}$")
-        plt.savefig(self.name+".png")
+        plt.savefig(self.name + ".png")
 
     ############################################################################
 
@@ -321,22 +323,25 @@ class RxSystem:
         # If applicatble append comparison data/labels
         for i in range(len(comp_data)):
             row = ["%.3e" % x for x in comp_data[i]]
-            row += ["-"]*(len(self.temps)-len(comp_data))
+            row += ["-"] * (len(self.temps) - len(comp_data))
             cellText.append(row)
 
         # Row labels
         rowLabels = self.outputs + comp_labels
         if len(cellText) != len(rowLabels):
-            rowLabels += ['Comparison']*(len(cellText)-len(rowLabels))
+            rowLabels += ['Comparison'] * (len(cellText) - len(rowLabels))
 
         # Column labels
         colLabels = ['%d (K)' % t for t in self.temps]
 
         # Add a table at the bottom of the axes
-        the_table = plt.table(cellText=cellText, rowLabels=rowLabels,
-                              colLabels=colLabels, loc='best')
+        the_table = plt.table(
+            cellText=cellText,
+            rowLabels=rowLabels,
+            colLabels=colLabels,
+            loc='best')
 
-        plt.savefig(self.name+"_table"+".pdf", bbox_inches="tight")
+        plt.savefig(self.name + "_table" + ".pdf", bbox_inches="tight")
 
 ################################################################################
 
@@ -351,13 +356,14 @@ class RxSystem:
         # Columns are the Temperatures and Rows are the specific reactions
         cellText = []
         for i in range(len(self.tst_rates)):
-            row = ['%.3e'%self.tst_rates[i][0],
-                    '%.3e'%self.tstt_rates[i][0],
-                    '%.3e'%comp_data]
+            row = [
+                '%.3e' % self.tst_rates[i][0],
+                '%.3e' % self.tstt_rates[i][0],
+                '%.3e' % comp_data
+            ]
             if i == 0:
                 row[-1] = '-'
             cellText.append(row)
-
 
         # Row labels
         rowLabels = labels
@@ -366,14 +372,23 @@ class RxSystem:
         colLabels = ['TST (s^-1)', 'TST+T (s^-1)', 'V&P (s^-1)']
 
         # Add a table at the bottom of the axes
-        the_table = plt.table(cellText=cellText, rowLabels=rowLabels,
-                              colLabels=colLabels, loc='best')
+        the_table = plt.table(
+            cellText=cellText,
+            rowLabels=rowLabels,
+            colLabels=colLabels,
+            loc='best')
 
-        plt.savefig(self.name+"_table"+".pdf", bbox_inches="tight")
+        plt.savefig(self.name + "_table" + ".pdf", bbox_inches="tight")
+
 
 ################################################################################
 
-def get_barriers(energy_files, outputs, plot=False, plot_name='', comp_data=[],
+
+def get_barriers(energy_files,
+                 outputs,
+                 plot=False,
+                 plot_name='',
+                 comp_data=[],
                  comp_labels=[]):
     '''
     Collect the energy barrier data from the various final and possibly
@@ -385,7 +400,7 @@ def get_barriers(energy_files, outputs, plot=False, plot_name='', comp_data=[],
             third is energy (0) and method (1).
     '''
 
-    barriers = [[],[],[]]
+    barriers = [[], [], []]
 
     i = 0
     for e_files in energy_files:
@@ -404,7 +419,7 @@ def get_barriers(energy_files, outputs, plot=False, plot_name='', comp_data=[],
         # Add barrier along with method to barriers attribute.
         barriers[0].append(dE)
         barriers[1].append(e_files[0][1])
-        barriers[2].append( outputs[i])
+        barriers[2].append(outputs[i])
 
         # Get "intermediate" energies
         if e_files[0][1] == 'cbsqb3':
@@ -414,7 +429,7 @@ def get_barriers(energy_files, outputs, plot=False, plot_name='', comp_data=[],
             dE_ub3lyp = ts_ub3lyp_e - gs_ub3lyp_e
             barriers[0].append(dE_ub3lyp)
             barriers[1].append('ub3lyp')
-            barriers[2].append( outputs[i])
+            barriers[2].append(outputs[i])
 
         elif e_files[0][1] == 'DF-LUCCSD(T)-F12':
             gs_lrmp2_e = readEnergy(e_files[0][0], 'RHF-LRMP2')
@@ -423,7 +438,7 @@ def get_barriers(energy_files, outputs, plot=False, plot_name='', comp_data=[],
             dE_lrmp2 = ts_lrmp2_e - gs_lrmp2_e
             barriers[0].append(dE_lrmp2)
             barriers[1].append('RHF-LRMP2')
-            barriers[2].append( outputs[i])
+            barriers[2].append(outputs[i])
 
             gs_ccsd_e = readEnergy(e_files[0][0], 'LUCCSD-F12a')
             ts_ccsd_e = readEnergy(e_files[1][0], 'LUCCSD-F12a')
@@ -431,7 +446,7 @@ def get_barriers(energy_files, outputs, plot=False, plot_name='', comp_data=[],
             dE_ccsd = ts_ccsd_e - gs_ccsd_e
             barriers[0].append(dE_ccsd)
             barriers[1].append('LUCCSD-F12a')
-            barriers[2].append( outputs[i])
+            barriers[2].append(outputs[i])
 
         elif e_files[0][1] == 'UCCSD(T)-F12':
             gs_rmp2_e = readEnergy(e_files[0][0], 'RHF-RMP2')
@@ -440,7 +455,7 @@ def get_barriers(energy_files, outputs, plot=False, plot_name='', comp_data=[],
             dE_rmp2 = ts_rmp2_e - gs_rmp2_e
             barriers[0].append(dE_rmp2)
             barriers[1].append('RHF-RMP2')
-            barriers[2].append( outputs[i])
+            barriers[2].append(outputs[i])
 
             gs_ccsd_e = readEnergy(e_files[0][0], 'RHF-UCCSD-F12a')
             ts_ccsd_e = readEnergy(e_files[1][0], 'RHF-UCCSD-F12a')
@@ -448,17 +463,17 @@ def get_barriers(energy_files, outputs, plot=False, plot_name='', comp_data=[],
             dE_ccsd = ts_ccsd_e - gs_ccsd_e
             barriers[0].append(dE_ccsd)
             barriers[1].append('RHF-UCCSD-F12a')
-            barriers[2].append( outputs[i] )
+            barriers[2].append(outputs[i])
 
         i += 1
 
     # print(barriers)
     # Plot the barrier heigts
     if plot:
-        all_bars = barriers[0] + comp_data
+        all_bars = np.array(barriers[0] + comp_data) * ha_to_kcal
         ind = np.arange(len(all_bars))
         wid = 0.35
-        colors = ['blue']*(len(barriers[0])) + ['red']*len(comp_data)
+        colors = ['blue'] * (len(barriers[0])) + ['red'] * len(comp_data)
 
         plt.figure()
         plt.bar(ind, all_bars, wid, align='edge', color=colors)
@@ -466,7 +481,7 @@ def get_barriers(energy_files, outputs, plot=False, plot_name='', comp_data=[],
         # Label the height of the bars
         for i in range(len(all_bars)):
             height = all_bars[i]
-            plt.text(i + wid/4., 1.05*height, '%.5f' % height, ha='center')
+            plt.text(i + wid / 4., 1.05 * height, '%.5f' % height, ha='center')
 
         # # Label the height of the bars for comparison data
         # for i in range(len(comp_data)):
@@ -477,27 +492,30 @@ def get_barriers(energy_files, outputs, plot=False, plot_name='', comp_data=[],
         # Titles and ticks
         # If no labels are present just say comparison
         if len(comp_labels) != len(comp_data):
-            comp_labels += ['Comparison']*(len(comp_data)-len(comp_labels))
+            comp_labels += ['Comparison'] * (len(comp_data) - len(comp_labels))
 
         all_labels = barriers[1] + comp_labels
 
         plt.title('Barrier Heights as a Function of Method for %s' % plot_name)
-        plt.xticks(ind+wid/2., all_labels, rotation=45)
-        plt.ylabel('Energy Barrier / Ha')
+        plt.xticks(ind + wid / 2., all_labels, rotation=45)
+        plt.ylabel('Energy Barrier (kcal/mol)')
 
         # Formatting
-        plt.ylim( min(0,min(all_bars)*1.25), max(all_bars)*1.25 )
-        plt.xlim( ind[0]-0.5, ind[-1]+1 )
+        # plt.ylim( min(0,min(all_bars)*1.25), max(all_bars)*1.25 )
+        plt.ylim(0, max(all_bars) * 1.25)
+        # plt.xlim( ind[0]-0.5, ind[-1]+1 )
+        plt.xlim(ind[1] - 0.5, ind[-1] + 1)
         plt.tight_layout()
         plt.axhline(0, color='black')
-        plt.savefig(plot_name+ '_barrier_heights'+'.png')
+        plt.savefig(plot_name + '_barrier_heights' + '.png')
         plt.close()
 
-    return(barriers)
+    return (barriers)
 
 
 ################################################################################
 
+
 def wigner_correction(t, freq, scale):
     # see doi:10.1103/PhysRev.40.749 and doi:10.1039/TF9595500001
-    return (1.0 + 1.0 / 24.0 * (h * abs(freq) * scale * c_in_cm / (t * kb) )**2)
+    return (1.0 + 1.0 / 24.0 * (h * abs(freq) * scale * c_in_cm / (t * kb))**2)
