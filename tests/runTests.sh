@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd tests
+
 # Ethane Tests (Thermo + IR)
 python ethane_test.py
 
