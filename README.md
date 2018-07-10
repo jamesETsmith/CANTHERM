@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/jamesETsmith/CANTHERM.svg?branch=master)](https://travis-ci.org/jamesETsmith/CANTHERM)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/6cc3025f25894e988329082059a21c05)](https://www.codacy.com/app/jamesETsmith/CANTHERM?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jamesETsmith/CANTHERM&amp;utm_campaign=Badge_Grade)
 
 # CANTHERM
 
