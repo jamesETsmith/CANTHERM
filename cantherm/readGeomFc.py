@@ -51,9 +51,12 @@ def readInputFile(file, data, verbose):
         elif line.split()[0].upper() == 'UNIMOL':
             data.ReacType = 'Unimol'
         else:
-            print('ReactionType is not specified in the. Either Unimol or Bimol should be specified after keyword Read')
+            print(
+                'ReactionType is not specified in the. Either Unimol or Bimol should be specified after keyword Read'
+            )
             exit()
         line = readMeaningfulLine(file)
+
 
 # read Temperature range
     if line.split()[0].upper() == 'TLIST':
@@ -81,7 +84,9 @@ def readInputFile(file, data, verbose):
         for i in range(numTemp):
             data.Temp.append(T0 + i * dT)
     else:
-        print('Temperaure information not given either use keyword Tlist or Trange')
+        print(
+            'Temperaure information not given either use keyword Tlist or Trange'
+        )
         exit()
 
     # read scaling factor
@@ -110,10 +115,10 @@ def readInputFile(file, data, verbose):
     for i in range(numMol):
         if data.ReacType == 'Unimol' and i == 1 or data.ReacType == 'Bimol' and i == 2:
             molec = molecule.Molecule(file, True, data.scale, verbose,
-                                        data.dir)
+                                      data.dir)
         else:
             molec = molecule.Molecule(file, False, data.scale, verbose,
-                                        data.dir)
+                                      data.dir)
         data.MoleculeList.append(molec)
     return
 
@@ -190,10 +195,11 @@ def readGeom(file):
     # print("HEREHEREHERE") # TODO
     lines = file.readlines()
     lines.reverse()
-# read geometries
+    # read geometries
 
     i = lines.index(
-        "                          Input orientation:                          \n")
+        "                          Input orientation:                          \n"
+    )
     geomLines = []
     stillRead = True
     k = i - 5
@@ -203,7 +209,7 @@ def readGeom(file):
         if (lines[k].startswith(" ------------")):
             stillRead = False
 
-    geom = np.zeros((len(geomLines),3))
+    geom = np.zeros((len(geomLines), 3))
     Mass = np.zeros((len(geomLines)))
 
     for j in range(len(geomLines)):
@@ -232,12 +238,12 @@ def readGeom(file):
         elif (int(tokens[1]) == 14):
             Mass[j] = 27.97692653465
         elif (int(tokens[1]) == 15):
-            Mass[j] =30.97376199842
+            Mass[j] = 30.97376199842
 
         elif (int(tokens[1]) == 18):
             Mass[j] = 35.96754510
         elif (int(tokens[1]) == 19):
-            Mass[j] =38.9637064864
+            Mass[j] = 38.9637064864
         elif (int(tokens[1]) == 20):
             Mass[j] = 39.962590863
         elif (int(tokens[1]) == 21):
@@ -245,7 +251,7 @@ def readGeom(file):
         elif (int(tokens[1]) == 22):
             Mass[j] = 45.95262772
         elif (int(tokens[1]) == 23):
-            Mass[j] =49.94715601
+            Mass[j] = 49.94715601
         elif (int(tokens[1]) == 24):
             Mass[j] = 49.94604183
         elif (int(tokens[1]) == 25):
@@ -376,14 +382,15 @@ def readGeom(file):
             print("ATOM NOT FOUND WITH TOKEN: %s" % tokens[1])
 
     # Read the bonds
-    bond_ind = lines.index('                           !    Initial Parameters    !\n')
-    bond_ind -= 5 # Skip heading
+    bond_ind = lines.index(
+        '                           !    Initial Parameters    !\n')
+    bond_ind -= 5  # Skip heading
     reading_bonds = True
     bonds = []
     while reading_bonds:
         if re.search(' ! R\d', lines[bond_ind]):
             s = re.search('\(([^)]+)', lines[bond_ind]).group(1).split(',')
-            s = [int(s[0])-1, int(s[1])-1]
+            s = [int(s[0]) - 1, int(s[1]) - 1]
             bonds.append(s)
             # print(s) # TODO
         if re.search(' ! A\d', lines[bond_ind]):
@@ -400,10 +407,11 @@ def readGeom(file):
 def readGeomFc(file):
     lines = file.readlines()
     lines.reverse()
-# read geometries
+    # read geometries
 
     i = lines.index(
-        "                          Input orientation:                          \n")
+        "                          Input orientation:                          \n"
+    )
     geomLines = []
     stillRead = True
     k = i - 5
@@ -436,6 +444,7 @@ def readGeomFc(file):
             Mass[j] = 31.97207
         if (int(tokens[1]) == 9):
             Mass[j] = 18.99840
+
 
 # read force constants
     Fc = matrix(
@@ -455,8 +464,8 @@ def readGeomFc(file):
     while j in range(numRepeats):
         i = 5 * j
         while i in range(5 * j, len(geomLines) * 3):
-            line = fclines[(j * (len(geomLines) * 3 + 1) - j *
-                            (j - 1) * 5 / 2) + i + 1 - 5 * j]
+            line = fclines[(j * (len(geomLines) * 3 + 1) - j * (j - 1) * 5 / 2)
+                           + i + 1 - 5 * j]
             tokens = line.split()
             k = 0
             while k in range(0, min(i + 1 - 5 * j, 5)):
@@ -471,10 +480,11 @@ def readGeomFc(file):
 def readFc(file):
     lines = file.readlines()
     lines.reverse()
-# read geometries
+    # read geometries
 
     i = lines.index(
-        "                          Input orientation:                          \n")
+        "                          Input orientation:                          \n"
+    )
     geomLines = []
     stillRead = True
     k = i - 5
@@ -507,6 +517,7 @@ def readFc(file):
             Mass[j] = 31.97207
         if (int(tokens[1]) == 9):
             Mass[j] = 18.99840
+
 
 # read force constants
     Fc = matrix(
@@ -527,7 +538,7 @@ def readFc(file):
         i = 5 * j
         while i in range(5 * j, len(geomLines) * 3):
             line = fclines[int((j * (len(geomLines) * 3 + 1) - j *
-                            (j - 1) * 5 / 2) + i + 1 - 5 * j)]
+                                (j - 1) * 5 / 2) + i + 1 - 5 * j)]
             tokens = line.split()
             k = 0
             while k in range(0, min(i + 1 - 5 * j, 5)):
@@ -572,12 +583,11 @@ def readEnergy(file, string):
     efile = open(file, 'r')
     com = efile.read()
 
-
     # Gaussian File
     if tokens[-1] == 'log' or tokens[-1] == 'out':
         if string == 'cbsqb3':
-            Energy = re.search('CBS-QB3 \(0 K\)= ' +
-                               ' \s*([\-0-9.]+)', com).group(1)
+            Energy = re.search('CBS-QB3 \(0 K\)= ' + ' \s*([\-0-9.]+)',
+                               com).group(1)
         elif string == 'g3':
             Energy = re.search('G3\(0 K\)= ' + ' \s*([\-0-9.]+)', com).group(1)
 
@@ -603,21 +613,78 @@ def readEnergy(file, string):
 
         elif string == 'RHF-RMP2':
             Energy = re.search('RHF-RMP2 energy' + '\s*([\-0-9.]+)',
-                               com ).group(1)
+                               com).group(1)
 
         elif string == 'RHF-UCCSD-F12a':
             Energy = re.search('RHF-UCCSD-F12a energy' + '\s*([\-0-9.]+)',
-                               com ).group(1)
+                               com).group(1)
 
         elif string == 'LUCCSD-F12a':
-            E_corr = re.search('LUCCSD-F12a correlation energy' + '\s*([\-0-9.]+)',
-                               com ).group(1)
-            E_ref = re.search('New reference energy'+ '\s*([\-0-9.]+)',
-                               com ).group(1)
+            E_corr = re.search(
+                'LUCCSD-F12a correlation energy' + '\s*([\-0-9.]+)',
+                com).group(1)
+            E_ref = re.search('New reference energy' + '\s*([\-0-9.]+)',
+                              com).group(1)
             Energy = float(E_ref) + float(E_corr)
 
     efile.close()
     return float(Energy)
+
+
+def readMOEnergies(filename):
+
+    aocc = " Alpha  occ. eigenvalues --"
+    avir = " Alpha virt. eigenvalues --"
+    bocc = "  Beta  occ. eigenvalues --"
+    bvir = "  Beta virt. eigenvalues --"
+    end_str = " **********************************************************************"
+
+    with open(filename, 'r') as f:
+        lines = f.readlines()
+
+        reading_mos = False
+        raw_mos = []
+
+        # Read MOs
+        for l in range(1, len(lines)):
+            i = -l
+            # Check for strings to start reading MOs
+            # print(lines[i])
+            if not reading_mos:
+                if bvir in lines[i]:
+                    reading_mos = True
+                elif bocc in lines[i]:
+                    reading_mos = True
+                elif avir in lines[i]:
+                    reading_mos = True
+                elif aocc in lines[i]:
+                    reading_mos = True
+
+                if reading_mos:
+                    if len(lines[i]) > 1:
+                        # print(lines[i])
+                        for mo in lines[i].split()[5:]:
+                            raw_mos.append(float(mo))
+
+            else:
+                # Test to stop and end reading of MOs
+                if end_str in lines[i]:
+                    reading_mos = False
+                    break
+
+                # Read data
+                if len(lines[i]) > 1:
+                    # print(len(lines[i]))
+                    # print(lines[i])
+                    for mo in lines[i].split()[5:]:
+                        raw_mos.append(float(mo))
+
+        mos = np.sort(np.array(raw_mos))
+        homo = mos[mos < 0.0].max()
+        lumo = mos[mos > 0.0].min()
+        # print(mos, homo, lumo)
+        # print(mos)
+        return mos, homo, lumo
 
 
 def readHFEnergy(fileName):
@@ -678,6 +745,7 @@ def getAtoms(Mass):
         j = j + 1
     return atoms
 
+
 def read_dipole(dipole_file):
     '''
     Returns the dipole and its magnitude in Debye.
@@ -688,15 +756,20 @@ def read_dipole(dipole_file):
         n_lines = len(lines)
 
         magn = 0
-        dip = np.zeros((3,))
+        dip = np.zeros((3, ))
 
         for i in range(n_lines):
-            if ' Electric dipole moment (dipole orientation)' in lines[n_lines-i-1]:
-                magn= float(lines[n_lines-i+2].split()[2].replace('D', 'E'))
-                dip[0] = float(lines[n_lines-i+3].split()[2].replace('D', 'E'))
-                dip[1] = float(lines[n_lines-i+4].split()[2].replace('D', 'E'))
-                dip[2] = float(lines[n_lines-i+5].split()[2].replace('D', 'E'))
+            if ' Electric dipole moment (dipole orientation)' in lines[
+                    n_lines - i - 1]:
+                magn = float(lines[n_lines - i + 2].split()[2].replace(
+                    'D', 'E'))
+                dip[0] = float(lines[n_lines - i + 3].split()[2].replace(
+                    'D', 'E'))
+                dip[1] = float(lines[n_lines - i + 4].split()[2].replace(
+                    'D', 'E'))
+                dip[2] = float(lines[n_lines - i + 5].split()[2].replace(
+                    'D', 'E'))
                 break
 
         # print(magn, dip) TODO
-        return magn, dip # in Debye
+        return magn, dip  # in Debye
