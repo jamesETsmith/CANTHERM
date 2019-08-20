@@ -596,6 +596,11 @@ def readEnergy(file, string):
 
         elif string == 'RM062X':
             Energy = re.findall("E\(RM062X\) = " + "\s*([\-0-9.]+)", com)[-1]
+        elif string == 'UCCSD(T)':
+            Energy = re.findall(" E\(Corr\)= " + "\s*([\-0-9.]+)", com)[-1]
+            print(Energy)
+        else:
+            raise ValueError("Gaussian method {} is not supported.".format(string))
 
     # Molpro File
     elif tokens[-1] == 'res':
@@ -626,6 +631,8 @@ def readEnergy(file, string):
             E_ref = re.search('New reference energy' + '\s*([\-0-9.]+)',
                               com).group(1)
             Energy = float(E_ref) + float(E_corr)
+        else:
+            raise ValueError("MOLPRO method {} is not supported.".format(string))
 
     efile.close()
     return float(Energy)
