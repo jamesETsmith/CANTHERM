@@ -9,12 +9,11 @@ python:
 
 before_install:
   - "pip install -U pip"
-  - "export PYTHONPATH=$PYTHONPATH:$(pwd)"
 
 # command to install dependencies
 install:
-  - pip install -r travis-ci-requirements.txt
+  - python -m pip install .
 
 # command to run tests
 script:
-  - bash tests/runTests.sh # or py.test for Python versions 3.5 and below
+  - pytest -v test_v2/ --cov=cantherm/core/

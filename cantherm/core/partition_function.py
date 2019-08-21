@@ -55,6 +55,25 @@ def q_rot(sigma, I_ext, temp):
 
 
 def q_vib(freqs, temp, scale=0.99):
+    """[summary]
+
+    This calculation assumes vibrations act as harmonic oscillators. For more details see 
+    "Molecular Driving Forces" by Dill equation 11.26.
+    
+    Parameters
+    ----------
+    freqs : iterable (list or `np.ndarray`)
+        A list of the vibrational frequencies in cm^-1.
+    temp : float
+        The temperature in K.
+    scale : float, optional
+        Scale of the frequencies, by default 0.99
+    
+    Returns
+    -------
+    float
+        The vibrational contribution to the partition function.
+    """
     q = 1
     freqs *= scale
     for nu in freqs:

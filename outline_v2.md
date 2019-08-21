@@ -2,6 +2,24 @@
 
 ## Core Library 
 - [  ] Calculation of partition functions
+    - [X] Translational
+    - [X] Vibrational
+    - [X] Rotational
+    - [ ] Hindered Vibrations
+
+- [  ] Calculation of enthalpy
+    - [ ] Translational
+    - [ ] Vibrational
+    - [ ] Rotational
+    - [ ] Hindered Vibrations
+
+- [  ] Calculation of entropy
+    - [ ] Translational
+    - [ ] Vibrational
+    - [ ] Rotational
+    - [ ] Hindered Vibrations
+
+- [  ] Calculation of gibbs free energy
     - [ ] Translational
     - [ ] Vibrational
     - [ ] Rotational
