@@ -8,18 +8,24 @@
     - [ ] Hindered Vibrations
 
 - [  ] Calculation of enthalpy
-    - [ ] Translational
-    - [ ] Vibrational
-    - [ ] Rotational
+    - [X] Translational
+    - [X] Vibrational
+    - [X] Rotational
     - [ ] Hindered Vibrations
 
 - [  ] Calculation of entropy
+    - [X] Translational
+    - [X] Vibrational
+    - [X] Rotational
+    - [ ] Hindered Vibrations
+
+- [  ] Calculation of gibbs free energy
     - [ ] Translational
     - [ ] Vibrational
     - [ ] Rotational
     - [ ] Hindered Vibrations
 
-- [  ] Calculation of gibbs free energy
+- [  ] Calculation of heat capacity at constant temperature
     - [ ] Translational
     - [ ] Vibrational
     - [ ] Rotational
