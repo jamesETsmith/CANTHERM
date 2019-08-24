@@ -26,9 +26,9 @@
     - [ ] Hindered Vibrations
 
 - [  ] Calculation of heat capacity at constant temperature
-    - [ ] Translational
-    - [ ] Vibrational
-    - [ ] Rotational
+    - [X] Translational
+    - [X] Vibrational
+    - [X] Rotational
     - [ ] Hindered Vibrations
 
 ### Utils

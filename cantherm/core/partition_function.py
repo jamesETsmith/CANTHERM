@@ -55,7 +55,7 @@ def q_rot(sigma, I_ext, temp):
 
 
 def q_vib(freqs, temp, scale=0.99):
-    """[summary]
+    """Calculates the vibrational contribution to the partition function.
 
     This calculation assumes vibrations act as harmonic oscillators. For more details see 
     "Molecular Driving Forces" by Dill equation 11.26.
