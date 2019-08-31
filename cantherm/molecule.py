@@ -748,10 +748,10 @@ class Molecule:
 
         for i in range(len(Temp)):
             oFile.write('{:^12.2f}'.format(Temp[i]) + "   ")
-            oFile.write('{:^12.3e}'.format(Q[i]) + "   ")
-            oFile.write('{:^12.3f}'.format(H[i]) + "   ")
-            oFile.write('{:^12.3f}'.format(Cp[i]) + "   ")
-            oFile.write('{:^12.3f}\n'.format(S[i]))
+            oFile.write('{:^12.6e}'.format(Q[i]) + "   ")
+            oFile.write('{:^12.6f}'.format(H[i]) + "   ")
+            oFile.write('{:^12.6f}'.format(Cp[i]) + "   ")
+            oFile.write('{:^12.6f}\n'.format(S[i]))
 
         oFile.write(horizontal_line + '\n')
         return
@@ -815,7 +815,7 @@ class Molecule:
 
         if self.e_file != None:
             out_file.write('Energy file: %s\n' % self.e_file)
-        out_file.write('Energy = %10.3e kcal/mol %s\n' %
+        out_file.write('Energy = %.6e kcal/mol %s\n' %
                        (self.Energy * ha_to_kcal, self.Etype))
         out_file.write('External Symmetry = ' + str(self.extSymm) + '\n')
         Iext = self.Iext.copy() * 1e23 * N_avo
@@ -871,8 +871,8 @@ class Molecule:
 
             q_ir *= q_ir_i
             s_ir += s_ir_i
-            h_ir += s_ir_i
-            cp_ir += s_ir_i
+            h_ir += h_ir_i
+            cp_ir += cp_ir_i
 
         return q_tr * q_vib * q_rot * q_ir
 
