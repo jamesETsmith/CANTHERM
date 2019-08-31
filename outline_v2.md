@@ -20,8 +20,8 @@
     - [ ] Hindered Vibrations
 
 - [  ] Calculation of gibbs free energy
-    - [ ] Translational
-    - [ ] Vibrational
+    - [X] Translational
+    - [X] Vibrational
     - [ ] Rotational
     - [ ] Hindered Vibrations
 

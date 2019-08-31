@@ -745,10 +745,10 @@ class Molecule:
 
         for i in range(len(Temp)):
             oFile.write("{:^12.2f}".format(Temp[i]) + "   ")
-            oFile.write("{:^12.3e}".format(Q[i]) + "   ")
-            oFile.write("{:^12.3f}".format(H[i]) + "   ")
-            oFile.write("{:^12.3f}".format(Cp[i]) + "   ")
-            oFile.write("{:^12.3f}\n".format(S[i]))
+            oFile.write("{:^12.6e}".format(Q[i]) + "   ")
+            oFile.write("{:^12.6f}".format(H[i]) + "   ")
+            oFile.write("{:^12.6f}".format(Cp[i]) + "   ")
+            oFile.write("{:^12.6f}\n".format(S[i]))
 
         oFile.write(horizontal_line + "\n")
         return
