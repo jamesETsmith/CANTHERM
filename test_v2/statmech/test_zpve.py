@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from cantherm.core import zpve
+from cantherm.statmech import zpve
 
 npt = np.testing
 

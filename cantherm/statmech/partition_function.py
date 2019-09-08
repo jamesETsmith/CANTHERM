@@ -74,7 +74,7 @@ def q_vib(freqs, temp, scale=0.99):
     float
         The vibrational contribution to the partition function.
     """
-    q = 1
+    q = 1.0
     freqs *= scale
     for nu in freqs:
         ei = h * nu * c_in_cm  # hv for this mode in J

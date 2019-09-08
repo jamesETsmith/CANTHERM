@@ -31,6 +31,11 @@
     - [X] Rotational
     - [ ] Hindered Vibrations
 
+- [  ] Change name to statmech
+  
+## Kinetics
+- [  ]
+
 ### Utils
 - [ ] Get rid of defined constants, try to convert as many as possible to those from scipy
 

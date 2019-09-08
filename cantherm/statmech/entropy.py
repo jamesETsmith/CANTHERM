@@ -1,7 +1,7 @@
 import numpy as np
 
 from cantherm.constants import kb, N_avo, h, c_in_cm, R_kcal, j_to_cal, R_cal
-from cantherm.core import q_tr, q_rot, q_vib, h_rot
+from cantherm.statmech import q_tr, q_rot, q_vib, h_rot
 
 
 def s_tr(masses, temp):

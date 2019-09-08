@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from cantherm.constants import N_avo
-from cantherm.core import h_tr, h_rot, h_vib
+from cantherm.statmech import h_tr, h_rot, h_vib
 
 npt = np.testing
 
