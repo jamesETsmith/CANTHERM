@@ -22,10 +22,10 @@ LICENSE = """
 ********************************************************************************
 """
 
-### Constants ###
-R_kcal = 0.00198588  # in kcal mol^-1 K^-1
-R_cal = 1.98588  # cal/(mol K)
-R = 8.314472  # J mol^-1 K^-1
+### Constants ### 4.184
+R = 8.314462618  # J mol^-1 K^-1 From NIST
+R_cal = R / 4.184  # cal/(mol K)
+R_kcal = R_cal / 1.0e3  # in kcal mol^-1 K^-1
 R_kJ = R / 1000
 kb = 1.38064852e-23  # J K^-1
 kb_in_cm = 0.695039  # cm^-1/K

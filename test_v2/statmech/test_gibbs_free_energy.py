@@ -9,7 +9,7 @@ npt = np.testing
 
 @pytest.mark.parametrize(
     "masses, temp, g_tr_ans",
-    [(ethane_masses, 298.15, (1.480225 - 298.15 * 36.109787 / 1e3))],
+    [(ethane_masses, 298.15, (1.481212 - 298.15 * 36.133859 / 1e3))],
 )
 def test_Gtr(masses, temp, g_tr_ans):
     npt.assert_approx_equal(g_tr(masses, temp), g_tr_ans, significant=5)
@@ -17,7 +17,7 @@ def test_Gtr(masses, temp, g_tr_ans):
 
 @pytest.mark.parametrize(
     "sigma, I_ext, temp, g_rot_ans",
-    [(6, ethane_Iext, 298.15, 0.888135 - 298.15 * 16.276204 / 1e3)],
+    [(6, ethane_Iext, 298.15, 0.888727 - 298.15 * 16.287053 / 1e3)],
 )
 def test_Grot(sigma, I_ext, temp, g_rot_ans):
     npt.assert_approx_equal(g_rot(sigma, I_ext, temp), g_rot_ans, significant=5)
@@ -25,7 +25,7 @@ def test_Grot(sigma, I_ext, temp, g_rot_ans):
 
 @pytest.mark.parametrize(
     "freqs, temp, g_vib_ans",
-    [(ethane_freqs, 298.15, 0.158189 - 298.15 * 0.646233 / 1e3)],
+    [(ethane_freqs.copy(), 298.15, 0.158188 - 298.15 * 0.646661 / 1e3)],
 )
 def test_Gvib(freqs, temp, g_vib_ans):
     npt.assert_approx_equal(g_vib(freqs, temp, scale=0.99), g_vib_ans, significant=4)
@@ -38,7 +38,7 @@ def test_Gvib(freqs, temp, g_vib_ans):
             ethane_masses,
             1,
             ethane_Iext,
-            ethane_freqs_all,
+            ethane_freqs_all.copy(),
             298.15,
             (0.051261 - 0.074378) * 627.509,
         )
@@ -46,5 +46,5 @@ def test_Gvib(freqs, temp, g_vib_ans):
 )
 def test_Gtot(masses, sigma, I_ext, freqs, temp, g_tot_ans):
     g = g_tr(masses, temp) + g_rot(sigma, I_ext, temp) + g_vib(freqs, temp, scale=1.0)
-    npt.assert_approx_equal(g, g_tot_ans, significant=4)
+    npt.assert_approx_equal(g, g_tot_ans, significant=5)
 

@@ -20,14 +20,14 @@ def cp_tr():
 def cp_rot():
     """Returns the rotational partition function. ASSUMES molecules are non-linear.
 
-    This calculation assumes rigid body rotation. TODO
+    This calculation assumes rigid body rotation. Also assumes the molecule is non-linear. TODO
     
     Returns
     -------
     float
         The rotational contribution to the heat capacity at constant pressure in cal/(mol K).
     """
-    cp = 3.0 / 2.0 * R_cal
+    cp = 5.0 / 2.0 * R_cal  # TODO
     return cp
 
 
