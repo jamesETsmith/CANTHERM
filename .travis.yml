@@ -13,7 +13,7 @@ before_install:
 # command to install dependencies
 install:
   - python -m pip install .
-  - pythone -m pytest --version
+  - python -m pytest --version
 
 # command to run tests
 script:
