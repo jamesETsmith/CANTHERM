@@ -14,8 +14,11 @@ before_install:
 install:
   - python -m pip install .
   - python -m pytest --version
-  - export CODECOV_TOKEN="6507eb9b-6dae-4f7c-8c96-960c7df165b6"
 
 # command to run tests
 script:
   - python -m pytest -v test_v2/ --cov=cantherm/statmech/
+
+# After completion of tests
+after_success:
+  - codecov
