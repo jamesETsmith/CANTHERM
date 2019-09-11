@@ -22,9 +22,7 @@ def test_Cp_rot(cp_rot_ans):
     npt.assert_approx_equal(cp_rot_test, cp_rot_ans, significant=4)
 
 
-@pytest.mark.parametrize(
-    "freqs, temp, cp_vib_ans", [(ethane_freqs.copy(), 298.15, 2.548059)]
-)
+@pytest.mark.parametrize("freqs, temp, cp_vib_ans", [(ethane_freqs, 298.15, 2.548059)])
 def test_Cp_vib(freqs, temp, cp_vib_ans):
     cp_vib_test = cp_vib(freqs, temp)
     npt.assert_approx_equal(cp_vib_test, cp_vib_ans, significant=4)

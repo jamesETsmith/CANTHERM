@@ -68,5 +68,8 @@ def g_vib(freqs, temp, scale=0.99):
     float
         The vibrational contribution to the Gibbs free energy in kcal/mol.
     """
-    g = h_vib(freqs, temp, scale=scale) - temp * s_vib(freqs, temp, scale=scale) / 1e3
+    g = (
+        h_vib(freqs.copy(), temp, scale=scale)
+        - temp * s_vib(freqs.copy(), temp, scale=scale) / 1e3
+    )
     return g

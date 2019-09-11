@@ -22,7 +22,7 @@
 - [  ] Calculation of gibbs free energy
     - [X] Translational
     - [X] Vibrational
-    - [ ] Rotational
+    - [X] Rotational
     - [ ] Hindered Vibrations
 
 - [  ] Calculation of heat capacity at constant temperature
@@ -32,6 +32,7 @@
     - [ ] Hindered Vibrations
 
 - [X] Change name to statmech
+- [X] Make all functions that use freqs copy
   
 ## Kinetics
 - [ ] Reaction

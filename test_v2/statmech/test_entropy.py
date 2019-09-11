@@ -30,9 +30,9 @@ def test_S_rot(sigma, I_ext, temp, s_rot_ans):
 @pytest.mark.parametrize(
     "freqs, temp, scale, s_vib_ans",
     [
-        (ethane_freqs.copy(), 298.15, 0.99, 0.6462),
+        (ethane_freqs, 298.15, 0.99, 0.6462),
         (ethane_freqs_all, 298.15, 1, 1.996),
-        (pvc_freqs.copy(), 298.15, 1.0, 19.427),
+        (pvc_freqs, 298.15, 1.0, 19.427),
     ],
 )
 def test_S_vib(freqs, temp, scale, s_vib_ans):

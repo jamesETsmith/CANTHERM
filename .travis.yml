@@ -16,4 +16,4 @@ install:
 
 # command to run tests
 script:
-  - pytest -v test_v2/ --cov=cantherm/core/
+  - pytest -v test_v2/ --cov=cantherm/statmech/

@@ -67,6 +67,7 @@ def s_vib(freqs, temp, scale=0.99):
     float 
         The vibrational entropic contribution in cal/(mol K)
     """
+    freqs = freqs.copy()
     freqs *= scale
     s = 0
     for nu in freqs:

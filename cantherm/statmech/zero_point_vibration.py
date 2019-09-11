@@ -21,6 +21,7 @@ def zpve(freqs, temp, scale=0.99):
         The zero point vibrational energy in kcal/mol.
     """
     energy = 0
+    freqs = freqs.copy()
     freqs *= scale
 
     for nu in freqs:

@@ -58,6 +58,7 @@ def h_vib(freqs, temp, scale=0.99):
     float 
         The vibrational enthalpy contribution in kcal/mol
     """
+    freqs = freqs.copy()
     freqs *= scale
     H = 0
     for nu in freqs:

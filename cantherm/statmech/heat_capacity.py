@@ -51,6 +51,7 @@ def cp_vib(freqs, temp, scale=0.99):
         The vibrational contribution to the heat capacity at constant pressure in cal/(mol K).
     """
     cp = 0
+    freqs = freqs.copy()
     freqs *= scale
     for nu in freqs:
         ei = h * nu * c_in_cm  # hv for this mode in J
