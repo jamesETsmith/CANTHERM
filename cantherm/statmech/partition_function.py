@@ -7,6 +7,8 @@ def q_tr(masses, temp):
     """Returns the translational contribution to the partition functions.
 
     This approximate molecules as an ideal gas particle. For more details see 
+    The NIST Reference Database I.D.2 (VII.C.6.) <https://cccbdb.nist.gov/thermo.asp> equation 12 and 13
+    or
     "Molecular Driving Forces" by Dill equation 11.18 and 11.19.
     
     Parameters
@@ -32,6 +34,8 @@ def q_rot(sigma, I_ext, temp):
     """Returns the rotational partition function. ASSUMES molecules are non-linear.
 
     This calculation assumes rigid body rotation. For more details see 
+    The NIST Reference Database I.D.2 (VII.C.6.) <https://cccbdb.nist.gov/thermo.asp> equation 17
+    or
     "Molecular Driving Forces" by Dill equation 11.31.
     
     Parameters
@@ -58,6 +62,8 @@ def q_vib(freqs, temp, scale=0.99):
     """Calculates the vibrational contribution to the partition function.
 
     This calculation assumes vibrations act as harmonic oscillators. For more details see 
+    The NIST Reference Database I.D.2 (VII.C.6.) <https://cccbdb.nist.gov/thermo.asp> equation 25
+    or
     "Molecular Driving Forces" by Dill equation 11.26.
     
     Parameters

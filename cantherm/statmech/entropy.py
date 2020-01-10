@@ -7,7 +7,8 @@ from cantherm.statmech import q_tr, q_rot, q_vib, h_rot
 def s_tr(masses, temp):
     """Calculates the translational entropic contribution.
 
-    Assumes the molecule is an ideal gas. Sackur-Tetrode equation for more details.
+    Assumes the molecule is an ideal gas. Sackur-Tetrode equation for more details, or see 
+    The NIST Reference Database I.D.2 (VII.C.6.) <https://cccbdb.nist.gov/thermo.asp> equation 14
     
     Parameters
     ----------
@@ -28,7 +29,8 @@ def s_tr(masses, temp):
 def s_rot(sigma, I_ext, temp):
     """Calculates the rotational entropic contribution.
 
-    Assumes the molecule is an ideal gas AND non-linear.
+    Assumes the molecule is an ideal gas AND non-linear. For more details see
+    The NIST Reference Database I.D.2 (VII.C.6.) <https://cccbdb.nist.gov/thermo.asp> equation 19
     
     Parameters
     ----------
@@ -51,7 +53,8 @@ def s_rot(sigma, I_ext, temp):
 def s_vib(freqs, temp, scale=0.99):
     """Calculates the vibrational entropic contribution.
 
-    TODO Add description/citation.
+   For more details see
+   The NIST Reference Database I.D.2 (VII.C.6.) <https://cccbdb.nist.gov/thermo.asp> equation 26
     
     Parameters
     ----------
