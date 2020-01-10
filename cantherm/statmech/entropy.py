@@ -76,4 +76,5 @@ def s_vib(freqs, temp, scale=0.99):
             (ei / (kb * temp)) / (np.exp(ei / (kb * temp)) - 1.0)
             - np.log(1.0 - np.exp(-ei / (kb * temp)))
         )
+
     return s

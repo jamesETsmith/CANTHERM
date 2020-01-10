@@ -50,7 +50,7 @@ def q_rot(sigma, I_ext, temp):
     """
     I_ext[I_ext == 0.0] = 1  # Prevents underflow if rotational sym shows up TODO
     q = np.power(np.pi * I_ext[0] * I_ext[1] * I_ext[2], 0.5) / sigma
-    q *= np.power(8.0 * np.pi ** 2 * kb * temp / h ** 2, 3.0 / 2.0)
+    q *= np.power(8.0 * np.pi ** 2 * kb * temp / h ** 2, 1.5)
     return q
 
 

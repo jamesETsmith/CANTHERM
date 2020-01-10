@@ -35,6 +35,6 @@ def test_Htot(freqs, scale, temp, H_tot_ans):
         h_tr(temp)
         + h_rot(temp)
         + h_vib(freqs, temp, scale=scale)
-        + zpve(freqs, temp, scale=scale)
+        + zpve(freqs, scale=scale)
     ) / 627.509  # convert to hartree
     npt.assert_approx_equal(H_tot_ans, H_tot, significant=5)

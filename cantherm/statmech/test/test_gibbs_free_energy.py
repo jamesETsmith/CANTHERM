@@ -45,7 +45,7 @@ def test_Gtot(masses, sigma, I_ext, freqs, scale, temp, g_tot_ans):
         g_tr(masses, temp)
         + g_rot(sigma, I_ext, temp)
         + g_vib(freqs, temp, scale=scale)
-        + zpve(freqs, temp, scale=scale)
+        + zpve(freqs, scale=scale)
     ) / 627.509  # convert to hartree
     npt.assert_approx_equal(g, g_tot_ans, significant=5)
 

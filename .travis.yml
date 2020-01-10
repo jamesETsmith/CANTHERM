@@ -12,13 +12,14 @@ before_install:
 
 # command to install dependencies
 install:
+  - python -m pip install cclib
   - python -m pip install codecov
   - python -m pip install .
   - python -m pytest --version
 
 # command to run tests
 script:
-  - python -m pytest -v test_v2/ --cov=cantherm/statmech/
+  - python -m pytest -v cantherm/ --cov=cantherm/statmech/
 
 # After completion of tests
 after_success:
