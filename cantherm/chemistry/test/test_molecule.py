@@ -11,11 +11,11 @@ npt = np.testing
 # Data
 data_files = [
     "bz.log",
-    "dvb_ir.out",
-    "ch4_ccsd_freq_opt.log",
+    # "dvb_ir.out",
+    # "ch4_ccsd_freq_opt.log",
     # "phosphonyl.log",
 ]  # Devs add new tests here
-data_rot_sym = [12, 2, 12]  # Devs add new tests here
+data_rot_sym = [12, 12, 3]  # Devs add new tests here
 
 data_dir = os.path.join(cantherm.__path__[0], "../data")
 data_paths = [os.path.join(data_dir, f) for f in data_files]
@@ -52,6 +52,7 @@ def test_cmol_thermo(data_path, sigma):
 
     # print(cmol.calc_ZPVE(scale=0.99, units="hartree"))
     # print(cmol.calc_entropy(298.15, sigma, scale=1.0))
+    print(cmol.calc_free_energy(298.15, sigma, scale=1.0, units="kcal/mol"))
 
     npt.assert_almost_equal(
         cmol.calc_free_energy(298.15, sigma, scale=1.0, units="hartree"),

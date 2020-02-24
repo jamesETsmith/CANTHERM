@@ -29,9 +29,10 @@ class Reaction:
     ############################################################################
 
     def calc_TST_rates(self):
-     """Calculates the transition state theory rate constants for the
+        """Calculates the transition state theory rate constants for the
             reaction at the given temperatures.
-     """
+        """
+        
         self.rates = [0] * len(self.temp)
         self.tunneling_coeff = [0] * len(self.temp)
         self.q_ratio = [0] * len(self.temp)
