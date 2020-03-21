@@ -1,3 +1,6 @@
+import math, re
+from cantherm.constants import h, c_in_cm, kb, ha_to_kcal, R_kcal
+
 class Reaction:
     """  
     Reaction class for CANTHERM

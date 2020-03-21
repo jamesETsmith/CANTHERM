@@ -117,28 +117,12 @@ class CMol:
         float
             The translational, rotational, and vibrational contributions to the partition function
         """
-        # Translational Contrib.
-        # TODO Assuming Unimolecular for now so it's technically per volume
-        # mass = masses.sum() / 1e3 / N_avo  # Mass in kg / molecule
-        # q_tr = ((2 * np.pi * mass) / h ** 2) ** 1.5 / 101325 * (kb * temp) ** 2.5
-
-        # # Rotational Contrib.
-        # I_ext[I_ext == 0.0] = 1  # Prevents underflow if rotational sym shows up TODO
-        # q_rot = np.power(np.pi * I_ext[0] * I_ext[1] * I_ext[2], 0.5) / sigma
-        # q_rot *= np.power(8.0 * np.pi ** 2 * kb * temp / h ** 2, 1.5)
-
-        # # Vibrational Contrib.
-        # q_vib = 1.0
-        # freqs = freqs.copy()
-        # freqs *= scale
-        # for nu in freqs:
-        #     ei = h * nu * c_in_cm  # hv for this mode in J
-        #     q_vib *= 1.0 / (1.0 - np.exp(-ei / (kb * temp)))
-        Q = q_tr(self.masses, temp) # CHECK UNITS
+        mass = self.masses.sum() / 1e3 / N_avo  # Mass in kg / molecule
+        Q = q_tr(mass, temp) 
         Q*= q_rot(sigma, I_ext, temp)
         Q*= q_vib(freqs, temp, scale=0.99)
 
-        print(q_tr(self.masses, temp))
+        print(q_tr(mass, temp))
         print(q_rot(sigma, I_ext, temp))
         print(q_vib(freqs,temp,scale=0.99))
         return Q
