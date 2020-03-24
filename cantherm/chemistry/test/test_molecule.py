@@ -11,8 +11,8 @@ npt = np.testing
 # Data
 data_files = [
     "bz.log",
-    "dvb_ir.out",
-    "ch4_ccsd_freq_opt.log",
+    # "dvb_ir.out",
+    # "ch4_ccsd_freq_opt.log",
     # "phosphonyl.log",
 ]  # Devs add new tests here
 data_rot_sym = [12, 2, 12]  # Devs add new tests here
@@ -51,11 +51,6 @@ def test_cmol_thermo(data_path, sigma):
     cmol = CMol(data_path)
 
     # print(cmol.calc_ZPVE(scale=0.99, units="hartree"))
-    # print(cmol.calc_entropy(298.15, sigma, scale=1.0))
+    G = cmol.calc_free_energy(298.15, sigma, scale=1.0, units="hartree")
 
-    npt.assert_almost_equal(
-        cmol.calc_free_energy(298.15, sigma, scale=1.0, units="hartree"),
-        cmol.data.freeenergy,
-        decimal=6,
-    )
-
+    npt.assert_almost_equal(G, cmol.data.freeenergy, decimal=6)

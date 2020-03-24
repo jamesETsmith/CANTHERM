@@ -88,9 +88,9 @@ class CMol:
         if units != "kcal/mol":
             ent = convertor(ent, "kcal/mol", units)
 
-        print(statmech.s_tr(self.masses, temp))
-        print(statmech.s_rot(sigma, self.mom_inertia, temp))
-        print(statmech.s_vib(self.vibfreqs, temp, scale=scale))
+        print("TRANS", statmech.s_tr(self.masses, temp))
+        print("ROT", statmech.s_rot(sigma, self.mom_inertia, temp))
+        print("VIB", statmech.s_vib(self.vibfreqs, temp, scale=scale))
         return ent
 
     def calc_free_energy(
