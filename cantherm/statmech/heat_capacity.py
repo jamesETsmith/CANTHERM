@@ -6,7 +6,8 @@ from cantherm.constants import kb, N_avo, h, c_in_cm, R_cal
 def cp_tr():
     """Returns the translational contribution to the heat capcity.
 
-    This approximate molecules as an ideal gas particle. TODO
+    This approximate molecules as an ideal gas particle. For more details see 
+    The NIST Reference Database I.D.2 (VII.C.6.) <https://cccbdb.nist.gov/thermo.asp> equation 15
     
     Returns
     -------
@@ -18,9 +19,10 @@ def cp_tr():
 
 
 def cp_rot():
-    """Returns the rotational partition function. ASSUMES molecules are non-linear.
+    """Returns the rotational contribution to the heat capacity. ASSUMES molecules are non-linear.
 
-    This calculation assumes rigid body rotation. Also assumes the molecule is non-linear. TODO
+    This calculation assumes rigid body rotation. Also assumes the molecule is non-linear. For more details see 
+    The NIST Reference Database I.D.2 (VII.C.6.) <https://cccbdb.nist.gov/thermo.asp> equation 20
     
     Returns
     -------
@@ -34,7 +36,8 @@ def cp_rot():
 def cp_vib(freqs, temp, scale=0.99):
     """Calculates the vibrational contribution to the constant pressure heat capacity.
 
-    This calculation assumes vibrations act as harmonic oscillators. TODO
+    This calculation assumes vibrations act as harmonic oscillators. For more details see 
+    The NIST Reference Database I.D.2 (VII.C.6.) <https://cccbdb.nist.gov/thermo.asp> equation 27
     
     Parameters
     ----------

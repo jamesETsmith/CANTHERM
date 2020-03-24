@@ -6,7 +6,8 @@ from cantherm.constants import kb, N_avo, h, c_in_cm, R_kcal, j_to_cal
 def h_tr(temp):
     """Calculates the translational enthalpic contribution.
 
-    Assumes the molecule is an ideal gas.
+    Assumes the molecule is an ideal gas. For more details see
+    The NIST Reference Database I.D.2 (VII.C.6.) <https://cccbdb.nist.gov/thermo.asp> equation 16
     
     Parameters
     ----------
@@ -25,7 +26,8 @@ def h_tr(temp):
 def h_rot(temp):
     """Calculates the rotational enthalpic contribution.
 
-    Assumes the molecule is an ideal gas AND non-linear.
+    Assumes the molecule is an ideal gas AND non-linear. For more details see
+    The NIST Reference Database I.D.2 (VII.C.6.) <https://cccbdb.nist.gov/thermo.asp> equation 21
     
     Parameters
     ----------
@@ -43,6 +45,9 @@ def h_rot(temp):
 
 def h_vib(freqs, temp, scale=0.99):
     """Calculates the vibrational enthalpic contribution.
+
+    For more details see
+    The NIST Reference Database I.D.2 (VII.C.6.) <https://cccbdb.nist.gov/thermo.asp> equation 28
     
     Parameters
     ----------
