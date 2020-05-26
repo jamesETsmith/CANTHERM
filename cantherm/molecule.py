@@ -815,7 +815,7 @@ class Molecule:
 
         if self.e_file != None:
             out_file.write('Energy file: %s\n' % self.e_file)
-        out_file.write('Energy = %.6e kcal/mol %s\n' %
+        out_file.write('Energy = %.10e kcal/mol %s\n' %
                        (self.Energy * ha_to_kcal, self.Etype))
         out_file.write('External Symmetry = ' + str(self.extSymm) + '\n')
         Iext = self.Iext.copy() * 1e23 * N_avo
