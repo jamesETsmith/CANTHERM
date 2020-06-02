@@ -1,6 +1,6 @@
 import numpy as np
 
-from cantherm.constants import N_avo
+from cantherm.constants import N_A
 
 pvc_masses = np.array(
     [
@@ -20,7 +20,7 @@ pvc_masses = np.array(
     ]
 )
 
-pvc_Iext = np.array([133.769, 519.756, 450.486]) / (1e23 * N_avo)
+pvc_Iext = np.array([133.769, 519.756, 450.486]) / (1e23 * N_A)
 pvc_freqs = np.array(
     [
         48.1455,

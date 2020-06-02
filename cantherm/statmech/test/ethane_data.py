@@ -1,11 +1,11 @@
 import numpy as np
 
-from cantherm.constants import N_avo
+from cantherm.constants import N_A
 
 ethane_masses = np.array(
     [12.00000, 1.00783, 1.00783, 1.00783, 12.00000, 1.00783, 1.00783, 1.00783]
 )
-ethane_Iext = np.array([6.272, 25.377, 25.377]) / (1e23 * N_avo)
+ethane_Iext = np.array([6.272, 25.377, 25.377]) / (1e23 * N_A)
 ethane_freqs = np.array(
     [
         827.959,

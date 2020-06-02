@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from cantherm.constants import N_avo
+from cantherm.constants import N_A
 from cantherm.statmech import s_tr, s_rot, s_vib
 from ethane_data import ethane_freqs, ethane_freqs_all, ethane_Iext, ethane_masses
 from pvc_data import pvc_masses, pvc_Iext, pvc_freqs

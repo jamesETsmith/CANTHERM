@@ -59,8 +59,8 @@ class Reaction:
                 Q_react = self.reactants.calculate_Q(t)
                 Q_TS = self.ts.calculate_Q(t)
 
-            self.q_ratio[i] = (kb * t / h) * (Q_TS / Q_react)
-            self.rates[i] = (kb * t / h) * (Q_TS / Q_react)
+            self.q_ratio[i] = (Boltzmann * t / h) * (Q_TS / Q_react)
+            self.rates[i] = (Boltzmann * t / h) * (Q_TS / Q_react)
             self.rates[i] *= math.exp(-(self.ts.Energy - \
                                         self.reactants.Energy) * ha_to_kcal \
                                         / R_kcal / t)

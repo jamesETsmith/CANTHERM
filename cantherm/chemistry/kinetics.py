@@ -1,5 +1,8 @@
 import math, re
-from cantherm.constants import h, c_in_cm, kb, ha_to_kcal, R_kcal
+from scipy.constants import h, c, Boltzmann, calorie, physical_constants, N_A
+c_in_cm = c*100
+R_kcal = physical_constants['molar gas constant'][0]/(calorie*1e3)
+ha_to_kcal = physical_constants['Hartree energy'][0]*N_A/(calorie*1e3)
 
 class Reaction:
     """  
@@ -35,10 +38,12 @@ class Reaction:
         """Calculates the transition state theory rate constants for the
             reaction at the given temperatures.
         """
-        
+        print('hello0')
         self.rates = [0] * len(self.temp)
         self.tunneling_coeff = [0] * len(self.temp)
         self.q_ratio = [0] * len(self.temp)
+
+        print('hello1')
 
         for i in range(len(self.temp)):
             t = self.temp[i]
@@ -46,8 +51,8 @@ class Reaction:
                 Q_react = self.reactants.calculate_Q(t)
                 Q_TS = self.ts.calculate_Q(t)
 
-            self.q_ratio[i] = (kb * t / h) * (Q_TS / Q_react)
-            self.rates[i] = (kb * t / h) * (Q_TS / Q_react)
+            self.q_ratio[i] = (Boltzmann * t / h) * (Q_TS / Q_react)
+            self.rates[i] = (Boltzmann * t / h) * (Q_TS / Q_react)
             self.rates[i] *= math.exp(-(self.ts.Energy - \
                                         self.reactants.Energy) * ha_to_kcal \
                                         / R_kcal / t)
@@ -57,11 +62,14 @@ class Reaction:
                 self.rates[i] *= kappa
                 self.tunneling_coeff[i] = kappa
 
+            #print(self.q_ratio[i])
+            print('hello2')
+
 
 ################################################################################
 
 
 def wigner_correction(t, freq, scale):
     # see doi:10.1103/PhysRev.40.749 and doi:10.1039/TF9595500001
-    return (1.0 + 1.0 / 24.0 * (h * abs(freq) * scale * c_in_cm / (t * kb))**2)
+    return (1.0 + 1.0 / 24.0 * (h * abs(freq) * scale * c_in_cm / (t * Boltzmann))**2)
 

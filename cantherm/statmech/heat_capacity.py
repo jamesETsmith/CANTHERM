@@ -1,7 +1,9 @@
 import numpy as np
 
-from cantherm.constants import kb, N_avo, h, c_in_cm, R_cal
+from scipy.constants import Boltzmann, N_A, h, c, physical_constants, calorie
 
+c_in_cm = c*100
+R_cal = physical_constants['molar gas constant'][0]/(calorie)
 
 def cp_tr():
     """Returns the translational contribution to the heat capcity.
@@ -60,8 +62,8 @@ def cp_vib(freqs, temp, scale=0.99):
         ei = h * nu * c_in_cm  # hv for this mode in J
         cp += (
             R_cal
-            * (ei / (kb * temp)) ** 2
-            * np.exp(ei / (kb * temp))
-            / (1.0 - np.exp(ei / (kb * temp))) ** 2
+            * (ei / (Boltzmann * temp)) ** 2
+            * np.exp(ei / (Boltzmann * temp))
+            / (1.0 - np.exp(ei / (Boltzmann * temp))) ** 2
         )
     return cp

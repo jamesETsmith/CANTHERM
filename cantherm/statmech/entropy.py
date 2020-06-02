@@ -1,8 +1,12 @@
 import numpy as np
 
-from cantherm.constants import kb, N_avo, h, c_in_cm, R_kcal, j_to_cal, R_cal
+from scipy.constants import Boltzmann, N_A, h, c, calorie
 from cantherm.statmech import q_tr, q_rot, q_vib, h_rot
 
+c_in_cm = c*100
+R_cal = physical_constants['molar gas constant'][0]/(calorie)
+R_kcal = R_cal/1e3
+j_to_cal = 1/calorie
 
 def s_tr(masses, temp):
     """Calculates the translational entropic contribution.
@@ -76,8 +80,8 @@ def s_vib(freqs, temp, scale=0.99):
     for nu in freqs:
         ei = h * nu * c_in_cm  # hv for this mode in J
         s += R_cal * (
-            (ei / (kb * temp)) / (np.exp(ei / (kb * temp)) - 1.0)
-            - np.log(1.0 - np.exp(-ei / (kb * temp)))
+            (ei / (Boltzmann * temp)) / (np.exp(ei / (Boltzmann * temp)) - 1.0)
+            - np.log(1.0 - np.exp(-ei / (Boltzmann * temp)))
         )
 
     return s

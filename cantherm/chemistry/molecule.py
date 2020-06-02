@@ -12,10 +12,11 @@ from cclib.method import Nuclear
 from cclib.method.nuclear import get_isotopic_masses
 
 from cantherm import statmech
-from cantherm.constants import N_avo, kb, h, c_in_cm
+from scipy.constants import N_A, Boltzmann, h, c
 from cantherm.statmech.partition_function import q_tr, q_rot, q_vib
 
 la = np.linalg
+c_in_cm = c*100
 
 
 class CMol:
@@ -117,7 +118,7 @@ class CMol:
         float
             The translational, rotational, and vibrational contributions to the partition function
         """
-        mass = self.masses.sum() / 1e3 / N_avo  # Mass in kg / molecule
+        mass = self.masses.sum() / 1e3 / N_A  # Mass in kg / molecule
         Q = q_tr(mass, temp) 
         Q*= q_rot(sigma, I_ext, temp)
         Q*= q_vib(freqs, temp, scale=0.99)
