@@ -1,7 +1,8 @@
 import numpy as np
 
-from cantherm.constants import kb, N_avo, h, c_in_cm
+from scipy.constants import Boltzmann, N_A, h, c
 
+c_in_cm = c*100
 
 def q_tr(masses, temp):
     """Returns the translational contribution to the partition functions.
@@ -25,8 +26,8 @@ def q_tr(masses, temp):
     """
     # Translational Contrib.
     # TODO Assuming Unimolecular for now so it's technically per volume
-    mass = masses.sum() / 1e3 / N_avo  # Mass in kg / molecule
-    q = ((2 * np.pi * mass) / h ** 2) ** 1.5 / 101325 * (kb * temp) ** 2.5
+    mass = masses.sum() / 1e3 / N_A  # Mass in kg / molecule
+    q = ((2 * np.pi * mass) / h ** 2) ** 1.5 / 101325 * (Boltzmann * temp) ** 2.5
     return q
 
 
@@ -54,7 +55,7 @@ def q_rot(sigma, I_ext, temp):
     """
     I_ext[I_ext == 0.0] = 1  # Prevents underflow if rotational sym shows up TODO
     q = np.power(np.pi * I_ext[0] * I_ext[1] * I_ext[2], 0.5) / sigma
-    q *= np.power(8.0 * np.pi ** 2 * kb * temp / h ** 2, 1.5)
+    q *= np.power(8.0 * np.pi ** 2 * Boltzmann * temp / h ** 2, 1.5)
     return q
 
 
@@ -85,5 +86,5 @@ def q_vib(freqs, temp, scale=0.99):
     freqs *= scale
     for nu in freqs:
         ei = h * nu * c_in_cm  # hv for this mode in J
-        q *= 1.0 / (1.0 - np.exp(-ei / (kb * temp)))
+        q *= 1.0 / (1.0 - np.exp(-ei / (Boltzmann * temp)))
     return q

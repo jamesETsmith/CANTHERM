@@ -12,9 +12,11 @@ from cclib.method import Nuclear
 from cclib.method.nuclear import get_isotopic_masses
 
 from cantherm import statmech
-from cantherm.constants import N_avo, kb, h
+from scipy.constants import N_A, Boltzmann, h, c
+from cantherm.statmech.partition_function import q_tr, q_rot, q_vib
 
 la = np.linalg
+c_in_cm = c*100
 
 
 class CMol:
@@ -104,3 +106,24 @@ class CMol:
         if units != "kcal/mol":
             free_energy = convertor(free_energy, "kcal/mol", units)
         return free_energy
+
+    def calculate_Q(self, temp: float, sigma: int, I_ext, freqs, scale=0.99):
+        """Returns the translational, rotational, and vibrational contribution to the partition functions.
+
+        This approximate molecules as an ideal gas particle. For more details see 
+        The NIST Reference Database I.D.2 (VII.C.6.) <https://cccbdb.nist.gov/thermo.asp> equations 12, 13, 17, 25
+    
+        Returns
+        -------
+        float
+            The translational, rotational, and vibrational contributions to the partition function
+        """
+        mass = self.masses.sum() / 1e3 / N_A  # Mass in kg / molecule
+        Q = q_tr(mass, temp) 
+        Q*= q_rot(sigma, I_ext, temp)
+        Q*= q_vib(freqs, temp, scale=0.99)
+
+        print(q_tr(mass, temp))
+        print(q_rot(sigma, I_ext, temp))
+        print(q_vib(freqs,temp,scale=0.99))
+        return Q

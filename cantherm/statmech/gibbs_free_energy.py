@@ -1,8 +1,8 @@
 import numpy as np
 
 from cantherm.statmech import h_tr, h_rot, h_vib, s_tr, s_rot, s_vib
-from cantherm.constants import kb, N_avo, h, c_in_cm
-
+from scipy.constants import Boltzmann, N_A, h, c
+c_in_cm = c*100
 
 def g_tr(masses, temp):
     """Returns the translational contribution to the Gibbs free energy.
