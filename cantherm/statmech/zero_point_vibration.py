@@ -1,6 +1,5 @@
 from scipy.constants import calorie, c, N_A, h
 c_in_cm = c*100
-j_to_cal = 1/calorie
 
 def zpve(freqs, scale=0.99):
     """Calculated the zero point correction to the energy from vibrations.
@@ -24,6 +23,6 @@ def zpve(freqs, scale=0.99):
     freqs *= scale
 
     for nu in freqs:
-        energy += 0.5 * h * nu * c_in_cm * N_A * j_to_cal / 1e3  # kcal/mol
+        energy += 0.5 * h * nu * c_in_cm * N_A / (calorie * 1e3)  # kcal/mol
 
     return energy

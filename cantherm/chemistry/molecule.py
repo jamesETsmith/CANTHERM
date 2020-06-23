@@ -16,7 +16,6 @@ from scipy.constants import N_A, Boltzmann, h, c
 from cantherm.statmech.partition_function import q_tr, q_rot, q_vib
 
 la = np.linalg
-c_in_cm = c*100
 
 
 class CMol:

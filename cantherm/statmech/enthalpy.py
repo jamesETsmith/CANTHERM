@@ -3,7 +3,6 @@ from scipy.constants import Boltzmann, N_A, h, c, calorie, physical_constants
 
 c_in_cm = c*100
 R_kcal = physical_constants['molar gas constant'][0]/(calorie*1e3)
-j_to_cal = 1/calorie
 
 def h_tr(temp):
     """Calculates the translational enthalpic contribution.
@@ -70,5 +69,5 @@ def h_vib(freqs, temp, scale=0.99):
     H = 0
     for nu in freqs:
         ei = h * nu * c_in_cm  # hv for this mode in J
-        H += ei / (np.exp(ei / (Boltzmann * temp)) - 1.0) * (N_A * j_to_cal / 1e3)
+        H += ei / (np.exp(ei / (Boltzmann * temp)) - 1.0) * (N_A / (calorie*1e3))
     return H

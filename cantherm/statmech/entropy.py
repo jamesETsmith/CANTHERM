@@ -1,12 +1,12 @@
 import numpy as np
 
-from scipy.constants import Boltzmann, N_A, h, c, calorie
+from scipy.constants import Boltzmann, N_A, h, c, calorie, physical_constants
 from cantherm.statmech import q_tr, q_rot, q_vib, h_rot
 
 c_in_cm = c*100
 R_cal = physical_constants['molar gas constant'][0]/(calorie)
 R_kcal = R_cal/1e3
-j_to_cal = 1/calorie
+
 
 def s_tr(masses, temp):
     """Calculates the translational entropic contribution.
