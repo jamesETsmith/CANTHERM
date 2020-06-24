@@ -15,7 +15,11 @@ npt = np.testing
 )
 def test_Qtr(masses, T, q_tr_ans):
     q_tr_test = q_tr(masses, T)
-    npt.assert_approx_equal(q_tr_test, q_tr_ans, significant=5)
+    # npt.assert_approx_equal(q_tr_test, q_tr_ans, significant=5)
+    err = abs(q_tr_test - q_tr_ans) / q_tr_ans
+    if err > 2e-5:
+        print(err)
+        raise AssertionError("Error in Qtr is too large")
 
 
 @pytest.mark.parametrize(
