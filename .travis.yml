@@ -20,7 +20,7 @@ install:
 
 # command to run tests
 script:
-  - python -m pytest -v cantherm/ --cov=cantherm/statmech/
+  - python -m pytest -v test/ --cov=cantherm/
 
 # After completion of tests
 after_success:

@@ -1,9 +1,11 @@
 ### Temp Files ###
 *#
 *~
+.coverage
 
 ### Compiled Code ###
 *pyc
+__pycache__
 
 ### Output Files ###
 *out
@@ -33,6 +35,6 @@ summit.sh
 *chem.inp
 
 ### Directories ###
-examples/ethane/RMG_compare
-examples/pvc/RMG_compare
-examples/h-transf/RMG_compare
+.vscode
+.pytest_cache
+*egg-info/

@@ -1,11 +1,12 @@
 import numpy as np
 import pytest
 
-from cantherm.constants import N_A, R_cal
+from scipy.constants import N_A, R, calorie
 from cantherm.statmech import cp_tr, cp_rot, cp_vib
 from ethane_data import ethane_freqs, ethane_freqs_all
 from pvc_data import pvc_freqs
 
+R_cal = R / calorie
 
 npt = np.testing
 

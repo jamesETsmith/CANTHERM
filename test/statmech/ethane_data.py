@@ -1,6 +1,6 @@
 import numpy as np
 
-from cantherm.constants import N_A
+from scipy.constants import N_A
 
 ethane_masses = np.array(
     [12.00000, 1.00783, 1.00783, 1.00783, 12.00000, 1.00783, 1.00783, 1.00783]

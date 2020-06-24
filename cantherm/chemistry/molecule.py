@@ -35,13 +35,20 @@ class CMol:
             )
 
         # Get basis set
-        self.basis_set = metadata["basis_set"]
+        # print(metadata)
+        self.basis_set = metadata.get("basis_set", "")
+
         # if self._basis_set == "CBSB3":
         #     raise ValueError("CBSQB3 parsing hasn't been implemented yet.")
 
         # Get methods used (i.e. HF, DFT, CCSD, CCSD-T, etc)
+
         self.methods = metadata["methods"]
-        self.method = self.methods[-1]  # final method used
+        self.method = ""
+        try:
+            self.method = self.methods[-1]  # final method used
+        except IndexError:
+            print(f"Can't find methods info in metadata for {file_path}")
 
         # Molecular properties
         if "CC" in self.method:
@@ -56,23 +63,21 @@ class CMol:
         self.mom_inertia = (
             nuc.principal_moments_of_inertia("g_cm_2")[0] * 1e-7
         )  # in kg * m^2
-        # ^ Currently need https://github.com/jamesETsmith/cclib/tree/moment_inertia
-        # for the above
 
         # Optional properties
         try:
             self.vibfreqs = self.data.vibfreqs
         except:
-            print("No vib data found")
+            print(f"No vib data found for {file_path}")
 
-    def calc_ZPVE(self, scale: float = 0.99, units: str = "kcal/mol") -> float:
+    def calc_ZPVE(self, scale: float = 1.0, units: str = "kcal/mol") -> float:
         zpve = statmech.zpve(self.vibfreqs, scale=scale)
         if units != "kcal/mol":
             zpve = convertor(zpve, "kcal/mol", units)
         return zpve
 
     def calc_heat_capacity(
-        self, temp: float, scale: float = 0.99, units: str = "kcal/mol"
+        self, temp: float, scale: float = 1.0, units: str = "kcal/mol"
     ) -> float:
         cp = statmech.cp_tr() + statmech.cp_rot()
         cp += statmech.cp_vib(self.vibfreqs, temp, scale=scale)
@@ -81,21 +86,23 @@ class CMol:
         return cp
 
     def calc_entropy(
-        self, temp: float, sigma: int, scale: float = 0.99, units: str = "kcal/mol"
+        self, temp: float, sigma: int, scale: float = 1.0, units: str = "kcal/mol"
     ) -> float:
         ent = statmech.s_tr(self.masses, temp)
         ent += statmech.s_rot(sigma, self.mom_inertia, temp)
         ent += statmech.s_vib(self.vibfreqs, temp, scale=scale)
+        ent /= 1000  # cal/mol K to kcal/mol K
         if units != "kcal/mol":
+            # This isn't really even the units we should change this
             ent = convertor(ent, "kcal/mol", units)
 
-        print("TRANS", statmech.s_tr(self.masses, temp))
-        print("ROT", statmech.s_rot(sigma, self.mom_inertia, temp))
-        print("VIB", statmech.s_vib(self.vibfreqs, temp, scale=scale))
+        # print("TRANS", statmech.s_tr(self.masses, temp))
+        # print("ROT", statmech.s_rot(sigma, self.mom_inertia, temp))
+        # print("VIB", statmech.s_vib(self.vibfreqs, temp, scale=scale))
         return ent
 
     def calc_free_energy(
-        self, temp: float, sigma: int, scale: float = 0.99, units: str = "kcal/mol"
+        self, temp: float, sigma: int, scale: float = 1.0, units: str = "kcal/mol"
     ) -> float:
         free_energy = statmech.g_tr(self.masses, temp)
         free_energy += statmech.g_rot(sigma, self.mom_inertia, temp)
@@ -106,7 +113,7 @@ class CMol:
             free_energy = convertor(free_energy, "kcal/mol", units)
         return free_energy
 
-    def calculate_Q(self, temp: float, sigma: int, I_ext, freqs, scale=0.99):
+    def calculate_Q(self, temp: float, sigma: int, I_ext, freqs, scale=1.0):
         """Returns the translational, rotational, and vibrational contribution to the partition functions.
 
         This approximate molecules as an ideal gas particle. For more details see 
@@ -118,11 +125,11 @@ class CMol:
             The translational, rotational, and vibrational contributions to the partition function
         """
         mass = self.masses.sum() / 1e3 / N_A  # Mass in kg / molecule
-        Q = q_tr(mass, temp) 
-        Q*= q_rot(sigma, I_ext, temp)
-        Q*= q_vib(freqs, temp, scale=0.99)
+        Q = q_tr(mass, temp)
+        Q *= q_rot(sigma, I_ext, temp)
+        Q *= q_vib(freqs, temp, scale=scale)
 
-        print(q_tr(mass, temp))
-        print(q_rot(sigma, I_ext, temp))
-        print(q_vib(freqs,temp,scale=0.99))
+        # print(q_tr(mass, temp))
+        # print(q_rot(sigma, I_ext, temp))
+        # print(q_vib(freqs, temp, scale=0.99))
         return Q

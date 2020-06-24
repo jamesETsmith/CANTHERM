@@ -1,6 +1,6 @@
 import numpy as np
 
-from cantherm.constants import N_A
+from scipy.constants import N_A
 
 pvc_masses = np.array(
     [
