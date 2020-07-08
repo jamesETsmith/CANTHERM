@@ -5,6 +5,7 @@ import cclib
 
 import cantherm
 from cantherm.chemistry.molecule import CMol
+from cantherm import get_sample_file_path
 
 npt = np.testing
 
@@ -16,11 +17,18 @@ data_files = [
     "ch4_ccsd_freq_opt.log",  # Rot. Symm 12
     "phosphonyl.log",  # Rot. Symm 3
     "BF3_freq_orca.out",  # Rot. Symm 3
+    "OH_opt_orca.out",  # Rot symm. 2
+    "oh_freq.log",  # Rot. symm. 1
+    "CuCl.log",  # Rot. symm. 1
 ]  # Devs add new tests here
-data_rot_sym = [12, 1, 12, 3, 3]  # Devs add new tests here
+data_rot_sym = [12, 1, 12, 3, 3, 1, 1, 1]  # Devs add new tests here
 
-data_dir = os.path.join(cantherm.__path__[0], "../data")
-data_paths = [os.path.join(data_dir, f) for f in data_files]
+if len(data_files) != len(data_rot_sym):
+    raise ValueError(
+        "data_files and data_rot_sym are different length!! Edit test_molecule.py"
+    )
+
+data_paths = [get_sample_file_path(f) for f in data_files]
 
 
 def test_load_data():

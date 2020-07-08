@@ -6,13 +6,15 @@ Date: 1/8/20
 """
 
 import numpy as np
+from scipy.constants import N_A, Boltzmann, h, c
+
 import cclib
 from cclib.parser.utils import convertor
 from cclib.method import Nuclear
 from cclib.method.nuclear import get_isotopic_masses
 
 from cantherm import statmech
-from scipy.constants import N_A, Boltzmann, h, c
+from cantherm.math.orientation3d import calc_principal_moi
 from cantherm.statmech.partition_function import q_tr, q_rot, q_vib
 
 la = np.linalg
@@ -56,13 +58,18 @@ class CMol:
         else:
             self.energy = convertor(self.data.scfenergies[-1], "eV", "hartree")
 
-        self.geom = self.data.atomcoords[-1]  # Get final geom
+        self.geom = self.data.atomcoords[-1]  # Get final geom in Angstroms
         self.masses = get_isotopic_masses(self.data.atomnos)
 
-        nuc = Nuclear(self.data)
-        self.mom_inertia = (
-            nuc.principal_moments_of_inertia("g_cm_2")[0] * 1e-7
-        )  # in kg * m^2
+        # nuc = Nuclear(self.data)
+        # self.mom_inertia = (
+        #     nuc.principal_moments_of_inertia("g_cm_2")[0] * 1e-7
+        # ) in kg * m^2
+
+        # Calculate principal moments of inertia
+        # masses amu -> kg && coords angstroms -> m
+        moi = calc_principal_moi(self.masses, self.geom)
+        self.mom_inertia = moi / N_A / 1e3 * 1e-20  # in kg * m^2
 
         # Optional properties
         try:
@@ -97,7 +104,7 @@ class CMol:
             ent = convertor(ent, "kcal/mol", units)
 
         # print("TRANS", statmech.s_tr(self.masses, temp))
-        # print("ROT", statmech.s_rot(sigma, self.mom_inertia, temp))
+        # print("ROT", statmech.s_rot(sigma, self.mom_inertia, temp), "cal/(mol K)")
         # print("VIB", statmech.s_vib(self.vibfreqs, temp, scale=scale))
         return ent
 
@@ -113,7 +120,9 @@ class CMol:
             free_energy = convertor(free_energy, "kcal/mol", units)
         return free_energy
 
-    def calculate_Q(self, temp: float, sigma: int, I_ext, freqs, scale=1.0):
+    def calc_Q(
+        self, temp: float, sigma: int, scale: float = 1.0,
+    ):
         """Returns the translational, rotational, and vibrational contribution to the partition functions.
 
         This approximate molecules as an ideal gas particle. For more details see 
@@ -124,12 +133,11 @@ class CMol:
         float
             The translational, rotational, and vibrational contributions to the partition function
         """
-        mass = self.masses.sum() / 1e3 / N_A  # Mass in kg / molecule
-        Q = q_tr(mass, temp)
-        Q *= q_rot(sigma, I_ext, temp)
-        Q *= q_vib(freqs, temp, scale=scale)
+        Q = q_tr(self.masses, temp)
+        Q *= q_rot(sigma, self.mom_inertia, temp)
+        Q *= q_vib(self.vibfreqs, temp, scale=scale)
 
-        # print(q_tr(mass, temp))
-        # print(q_rot(sigma, I_ext, temp))
-        # print(q_vib(freqs, temp, scale=0.99))
+        # print("Q_tr", q_tr(self.masses, temp))
+        # print("Q_rot", q_rot(sigma, self.mom_inertia, temp))
+        # print("Q_vib", q_vib(self.vibfreqs, temp, scale=1))
         return Q
