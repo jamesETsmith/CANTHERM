@@ -148,13 +148,15 @@ def calc_principal_moi(
 
     geom = coords.copy()
     com = calc_center_of_mass(masses, geom)
-    geom -= com
+    geom -= com  # Move COM to origin
     moi_tensor = make_moi_tensor(masses, geom)
     moi_old, v_old = np.linalg.eigh(moi_tensor)
 
+    zero_tol = tol ** 1.5
+
     # If any of the MOI are already 0, return them
-    if abs(moi_old.min()) < tol ** 2:
-        moi_old[moi_old / moi_old.max() < tol ** 2] = 0
+    if abs(moi_old.min()) < zero_tol:
+        moi_old[moi_old / moi_old.max() < zero_tol] = 0
         return moi_old
 
     # Self Consistent Standardization of Orientation
@@ -176,7 +178,7 @@ def calc_principal_moi(
             # than the largest principal moment, set them to
             # zero
             print(moi_i)
-            moi_i[moi_i / moi_i.max() < tol ** 2] = 0
+            moi_i[moi_i / moi_i.max() < zero_tol] = 0
             return moi_i
         else:
             moi_old = moi_i.copy()
@@ -186,7 +188,7 @@ def calc_principal_moi(
         + "\nThis may cause your rotational thermodynamic quantities to have large errors!",
         RuntimeWarning,
     )
-    moi_old[moi_old / moi_old.max() < tol ** 2] = 0
+    moi_old[moi_old / moi_old.max() < zero_tol] = 0
     print(moi_old)
     return moi_old
 
