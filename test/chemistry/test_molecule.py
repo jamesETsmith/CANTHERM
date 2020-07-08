@@ -72,7 +72,8 @@ def test_cmol_thermo(data_path, sigma):
         - cmol.data.freeenergy
     )
 
-    # This is loose because there is disagreement with G16 on the mHa level
-    if abs(err) > 1.9e-3:
-        print(abs(err))
-        raise AssertionError("Cantherm's free energy doesn't match the known value")
+    # This is loose because there is disagreement with G16 on the 1e-4 Ha level
+    if abs(err) > 1e-3:
+        raise AssertionError(
+            f"Cantherm's free energy doesn't match the known value error ={abs(err)}"
+        )

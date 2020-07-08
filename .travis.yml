@@ -13,15 +13,13 @@ before_install:
 
 # command to install dependencies
 install:
-  - python -m pip install cclib
   - python -m pip install codecov
-  - python -m pip install periodictable
   - python -m pip install .
   - python -m pytest --version
 
 # command to run tests
 script:
-  - python -m pytest -v test/ --cov=cantherm/
+  - python -m pytest -v -s test/ --cov=cantherm/
 
 # After completion of tests
 after_success:
