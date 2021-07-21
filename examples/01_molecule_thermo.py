@@ -2,8 +2,8 @@ from cantherm import get_sample_file_path
 from cantherm.chemistry.molecule import CMol
 
 # Boiler plate to point Cantherm toward it's own data directory
-geom_opt_file = get_sample_file_path("BF3_geom_opt.log")
-uccsd_t_file = get_sample_file_path("BF3_uccsd_t.log")
+geom_opt_file = get_sample_file_path("D4OHTS_Freq.log")
+uccsd_t_file = get_sample_file_path("D4OHTS_Energy.log")
 
 # Use Cantherm to process the logfiles
 cmol_opt = CMol(geom_opt_file)

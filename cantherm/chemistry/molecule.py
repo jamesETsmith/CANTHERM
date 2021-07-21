@@ -73,9 +73,17 @@ class CMol:
 
         # Optional properties
         try:
-            self.vibfreqs = self.data.vibfreqs
+            self.vibfreqs = []
+            self.imagvibfreqs = []
+            for vib in self.data.vibfreqs:
+                if vib > 0:
+                    self.vibfreqs = np.append(self.vibfreqs, vib)
+                elif vib < 0:
+                    self.imagvibfreqs = np.append(self.imagvibfreqs, vib)
+                    print('Imaginary frequency found:', vib)
+                    print('Running Transition State calculation')
         except:
-            print(f"No vib data found for {file_path}")
+            print(f"{file_path} will not be used for vibrational contributions")
 
     def calc_ZPVE(self, scale: float = 1.0, units: str = "kcal/mol") -> float:
         zpve = statmech.zpve(self.vibfreqs, scale=scale)
