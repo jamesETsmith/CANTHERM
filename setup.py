@@ -9,5 +9,6 @@ setup(
     license="LICENSE",
     description="Thermochemistry post processing for quantum chemistry packages",
     long_description=open("README.md").read(),
-    install_requires=["scipy", "numpy", "matplotlib", "cclib", "pytest-cov"],
+    python_requires=">3.5",
+    install_requires=["scipy", "numpy", "matplotlib", "cclib>=1.6.3", "pytest-cov"],
 )

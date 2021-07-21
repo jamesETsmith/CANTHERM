@@ -2,7 +2,8 @@ import numpy as np
 
 from scipy.constants import Boltzmann, N_A, h, c
 
-c_in_cm = c*100
+c_in_cm = c * 100
+
 
 def q_tr(masses, temp):
     """Returns the translational contribution to the partition functions.
@@ -53,9 +54,12 @@ def q_rot(sigma, I_ext, temp):
     float
         The rotational partition function.
     """
-    I_ext[I_ext == 0.0] = 1  # Prevents underflow if rotational sym shows up TODO
-    q = np.power(np.pi * I_ext[0] * I_ext[1] * I_ext[2], 0.5) / sigma
-    q *= np.power(8.0 * np.pi ** 2 * Boltzmann * temp / h ** 2, 1.5)
+    q = 1
+    if np.min(I_ext) == 0:  # linear
+        q *= (8 * np.pi ** 2 * np.max(I_ext) * Boltzmann * temp) / (sigma * h ** 2)
+    else:  # non-linear
+        q *= np.power(np.pi * I_ext[0] * I_ext[1] * I_ext[2], 0.5) / sigma
+        q *= np.power(8.0 * np.pi ** 2 * Boltzmann * temp / h ** 2, 1.5)
     return q
 
 

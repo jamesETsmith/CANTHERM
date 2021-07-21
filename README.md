@@ -7,7 +7,17 @@
 
 A **Python3** based software to calculate thermodynamic properties of molecules and rate coefficients of reactions. At the current time Gaussian log files are require to for the hindered rotor scans and frequency calculations and the CanTherm can extract the energy from either Gaussian or MOLPRO files.
 
-# Installation
+---
+## Dependencies
+
+- [scipy](https://www.scipy.org/install.html) 
+- [numpy](https://numpy.org/install/) 
+- [matplotlib](https://matplotlib.org/3.1.1/users/installing.html)
+- [cclib>=1.6.3](https://cclib.github.io/how_to_install.html)
+- [pytest-cov](https://github.com/pytest-dev/pytest-cov#installation)
+
+---
+## Installation
 
 ```bash
 git clone git@github.com:VirginiaJohnson/CANTHERM.git
@@ -15,6 +25,8 @@ cd CANTHERM
 python -m pip install -e .
 ```
 
-# Rules for Contributing
-
-If you contribute to this repository, we are trying to follow the Google Python style guide as closely as possible so please make sure to use the naming conventions described below. If you'd like to know more about the style guide please see this [link](https://google.github.io/styleguide/pyguide.html).
+---
+## Running the Tests
+```bash
+python -m pytest -v test/ --cov=cantherm/ 
+```
