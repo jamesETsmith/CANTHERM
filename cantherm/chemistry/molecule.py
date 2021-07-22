@@ -72,10 +72,14 @@ class CMol:
         self.mom_inertia = moi / N_A / 1e3 * 1e-20  # in kg * m^2
 
         # Optional properties
-        try:
-            self.vibfreqs = self.data.vibfreqs
-        except:
+        self.vibfreqs = getattr(self.data, "vibfreqs", np.array([]))
+        if self.vibfreqs.size > 0:
+            self.vibfreqs = self.vibfreqs[self.vibfreqs > 0]
+            self.imag_vibfreqs = self.vibfreqs[self.vibfreqs < 0]
+        else:
+            self.imag_vibfreqs = np.array([])
             print(f"No vib data found for {file_path}")
+            print(f"{file_path} will not be used for vibrational contributions")
 
     def calc_ZPVE(self, scale: float = 1.0, units: str = "kcal/mol") -> float:
         zpve = statmech.zpve(self.vibfreqs, scale=scale)
