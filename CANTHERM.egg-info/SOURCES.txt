@@ -1,9 +1,0 @@
-README.md
-setup.py
-CANTHERM.egg-info/PKG-INFO
-CANTHERM.egg-info/SOURCES.txt
-CANTHERM.egg-info/dependency_links.txt
-CANTHERM.egg-info/requires.txt
-CANTHERM.egg-info/top_level.txt
-cantherm/__init__.py
-test/test_sample_data_loader.py

@@ -20,7 +20,7 @@ A **Python3** based software to calculate thermodynamic properties of molecules 
 ## Installation
 
 ```bash
-git clone git@github.com: jamesETsmith/CANTHERM.git
+git clone git@github.com:jamesETsmith/CANTHERM.git
 cd CANTHERM
 python -m pip install -e .
 ```

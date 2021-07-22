@@ -38,3 +38,4 @@ summit.sh
 .vscode
 .pytest_cache
 *egg-info/
+CANTHERM.egg-info
